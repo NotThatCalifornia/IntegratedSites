@@ -27,7 +27,7 @@ function buildPage() {
       // Build the header content
       const headerContent = `
         <header>
-            <img src="http://localhost/img/logo.png" alt="Not That California Brewing Company" />
+            <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
             <h1><span id="temperature">${temperature}<span>˚C</h1>
         </header>
       `;
