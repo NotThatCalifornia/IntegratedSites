@@ -43,8 +43,9 @@ div.info p {
 div.info p.key {
     
 }
-div.info p.value {
-
+p.value a.btn {
+    float: right;
+    margin-top: -3px;
 }
 div.modules p {
     position: relative;
@@ -71,4 +72,14 @@ div.modules span i {
 }
 div.modules span.name {
     margin-left: 44px;
+}
+.footer {
+    color: darkgray;
+    font-size: small;
+}
+.footer p {
+    margin: 0;
+}
+.footer a {
+    color: darkgray;
 }
