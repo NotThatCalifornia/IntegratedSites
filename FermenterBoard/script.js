@@ -20,8 +20,8 @@ function buildPage() {
       fetch('/modules').then(response => response.json())
     ]).then(([values, info, modules]) => {
       // Extract temperature and update the title
-      const temperature = values.temp1;
-      const internalTemperature = values.int;
+      const temperature = values.temp1.toFixed(2);
+      const internalTemperature = values.int.toFixed(2);
       document.title = `Brewery name - ${temperature}˚C`;
   
       // Build the header content
