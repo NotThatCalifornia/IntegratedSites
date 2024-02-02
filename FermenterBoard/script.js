@@ -129,11 +129,11 @@ function fetchAndUpdateValues() {
         .then(data => {
         const temperatureElement = document.getElementById('temperature');
         if (temperatureElement) {
-            temperatureElement.textContent = `${data.temp1}˚C`;
+            temperatureElement.textContent = `${data.temp1.toFixed(2)}˚C`;
         }
         const internalTemperatureElement = document.getElementById('internalTemperature');
         if (internalTemperatureElement) {
-            internalTemperatureElement.textContent = `${data.int}˚C`;
+            internalTemperatureElement.textContent = `${data.int.toFixed(2)}˚C`;
         }
 
         handleRelay('#relay1', data.relay1);
