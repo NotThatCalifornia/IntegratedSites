@@ -17,7 +17,11 @@ header img {
 }
 header h1 {
     margin-top: 22px;
-    margin-bottom: 24px;
+    margin-bottom: 0px;
+}
+h3 {
+    font-size: medium!important;
+    margin-bottom: 22px!important;
 }
 h4 {
     padding-top: 22px;
@@ -29,12 +33,17 @@ div.values {
     text-align: center;
 }
 div.section {
-    margin-bottom: 22px;
+
 }
-div.section div.card {
+div.section .card {
     padding: 12px;
     margin-bottom: 22px;
     width: 100%;
+}
+.small-info {
+    color: darkgray;
+    font-size: small;
+    margin-top: 22px;
 }
 div.info p {
     margin: 0;
@@ -76,6 +85,7 @@ div.modules span.name {
 .footer {
     color: darkgray;
     font-size: small;
+    margin-top: 22px;
 }
 .footer p {
     margin: 0;

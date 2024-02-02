@@ -22,6 +22,7 @@ function buildPage() {
       // Extract temperature and update the title
       const temperature = values.temp1.toFixed(2);
       const internalTemperature = values.int.toFixed(2);
+      const targetTemperature = values.targetTemp.toFixed(2);
       document.title = `Brewery name - ${temperature}˚C`;
   
       // Build the header content
@@ -29,6 +30,7 @@ function buildPage() {
         <header>
             <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
             <h1><span id="temperature">${temperature}<span>˚C</h1>
+            <h3>(<span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
         </header>
       `;
   
@@ -56,6 +58,25 @@ function buildPage() {
             <div class="section modules values">
                 <p><span id="relay1" class="indicator ${values.relay1 ? 'enabled' : 'disabled'}"><i>${values.relay1 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay1"]}</span></p>
                 <p><span id="relay2" class="indicator ${values.relay2 ? 'enabled' : 'disabled'}"><i>${values.relay2 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay2"]}</span></p>
+            </div>
+            <div class="section info">
+                <div class="text-center">
+                    <h4 id="set-header" class="btn btn-success dropdown-toggle">
+                        Set target temperature
+                        <span class="caret"></span>
+                    </h4>
+                </div>
+                <form target="#" id="set" class="card">
+                    <div class="mb-3"> <!-- or use 'form-group' for spacing -->
+                        <div id="feedback" class="alert"></div>
+                        <div class="input-group">
+                            <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="targetFeedback" />
+                            <span class="input-group-text">˚C</span>
+                            <button class="btn btn-primary" type="submit">Submit</button>
+                        </div>
+                        <div class="text-center small-info">Values between -10˚C and 45˚C</div>
+                    </div>
+                </form>
             </div>
             <div class="section info">
                 <div class="text-center">
@@ -97,6 +118,10 @@ function buildPage() {
       // Inject the new content into the body, replacing all current elements
       document.body.innerHTML = pageContent;
 
+    $("#set-header").click(function(){
+        $("#set").toggle("fast");
+    });
+    $("#set").hide();
     $("#info-header").click(function(){
         $("#info").toggle("fast");
     });
@@ -106,6 +131,13 @@ function buildPage() {
     });
     $("#modules").hide();
     setLastUpdated();
+
+    $('form').on('submit', function(event) {
+        event.preventDefault();
+        submitData();
+    });
+
+    $("#feedback").hide();
 
     }).catch(error => {
       console.error('Error fetching data:', error);
@@ -127,20 +159,15 @@ function fetchAndUpdateValues() {
         return response.json();
         })
         .then(data => {
-        const temperatureElement = document.getElementById('temperature');
-        if (temperatureElement) {
-            temperatureElement.textContent = `${data.temp1.toFixed(2)}˚C`;
-        }
-        const internalTemperatureElement = document.getElementById('internalTemperature');
-        if (internalTemperatureElement) {
-            internalTemperatureElement.textContent = `${data.int.toFixed(2)}˚C`;
-        }
+            $('#temperature').text(`${data.temp1.toFixed(2)}˚C`);
+            $('#internalTemperature').text(`${data.int.toFixed(2)}˚C`);
+            $('#targetTemperature').text(`${data.targetTemp.toFixed(2)}˚C`);
 
-        handleRelay('#relay1', data.relay1);
-        handleRelay('#relay2', data.relay2);
+            handleRelay('#relay1', data.relay1);
+            handleRelay('#relay2', data.relay2);
 
-        document.title = `Brewery name - ${data.temperature}˚C`;
-        setLastUpdated();
+            document.title = `Brewery name - ${data.temperature}˚C`;
+            setLastUpdated();
         })
         .catch(error => {
         console.error('Error fetching /values:', error);
@@ -162,6 +189,63 @@ function setLastUpdated() {
     if (internalTemperatureElement) {
         internalTemperatureElement.textContent = getDefaultFormattedDateTime();
     }
+}
+
+function submitData() {
+    const targetValue = $('input[name="target"]').val();
+    const apiEndpoint = '/';
+    $.ajax({
+        url: apiEndpoint,
+        type: 'POST',
+        data: { target: targetValue },
+        success: function(data) {
+            $('input[name="target"]').val("");
+            fetchAndUpdateValues();
+
+            console.log('Form submitted:', data);
+            const inputField = $('#target');
+            const feedbackContainer = $('#feedback');
+            if (data.success) {
+                feedbackContainer.removeClass('alert-danger').addClass('alert-success').text('Success: The new target temperature is ' + data.target + '˚C');
+                inputField.removeClass('is-invalid').addClass('is-valid');
+                setTimeout(function() {
+                    inputField.removeClass('is-valid');
+                    setTimeout(function() {
+                        $("#set").toggle("fast");
+                    }, 1000);
+                }, 4000);
+            } else {
+                feedbackContainer.removeClass('alert-success').addClass('alert-danger').text('An error occurred. Please try again.');
+                inputField.removeClass('is-valid').addClass('is-invalid')
+                setTimeout(function() {
+                    inputField.removeClass('is-invalid');
+                }, 5000);
+            }
+            feedbackContainer.show("fast").delay(3000).hide("fast");
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            
+            let message = 'An error occurred while submitting the form. Please try again.';
+            if (jqXHR.responseText) {
+                try {
+                    const response = JSON.parse(jqXHR.responseText);
+                    message = response.message;
+                    
+                } catch (e) {
+                    alert();
+                }
+            }
+            console.error('Error submitting form:', textStatus, errorThrown);
+            const inputField = $('#target');
+            const feedbackContainer = $('#feedback');
+            feedbackContainer.removeClass('alert-success').addClass('alert-danger').text(message);
+            inputField.removeClass('is-valid').addClass('is-invalid');
+            feedbackContainer.show("fast").delay(3000).hide("fast");
+            setTimeout(function() {
+                inputField.removeClass('is-invalid');
+            }, 5000);
+        }
+    });
 }
 
 // Call fetchAndUpdateValues every 5 seconds
