@@ -72,7 +72,7 @@ function buildPage() {
                 </div>
                 <form target="#" id="set" class="card">
                     <div class="mb-3">
-                        <div id="target-feedback" class="alert"></div>
+                        <div id="target-feedback" class="alert">:(</div>
                         <div class="input-group">
                             <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="target-feedback" />
                             <span class="input-group-text">˚C</span>
@@ -93,7 +93,7 @@ function buildPage() {
                 </div>
                 <form target="#" id="name" class="card">
                     <div class="mb-3">
-                        <div id="name-feedback" class="alert"></div>
+                        <div id="name-feedback" class="alert">:)</div>
                         <div class="input-group">
                             <input type="text" id="name" name="name", value="${deviceName}" class="form-control" placeholder="Device name" aria-label="Device name" aria-describedby="name-feedback" />
                             <button class="btn btn-primary" type="submit">Submit</button>
@@ -139,7 +139,6 @@ function buildPage() {
             </div>
         </div>
       `;
-  
       // Inject the new content into the body, replacing all current elements
       document.body.innerHTML = pageContent;
 
@@ -170,11 +169,11 @@ function buildPage() {
         submitData("name");
     });
 
-    $("#feedback").hide();
+    $("#target-feedback").hide();
+    $("#name-feedback").hide();
 
     }).catch(error => {
       console.error('Error fetching data:', error);
-      // Handle the error, e.g., display an error message
       document.body.innerHTML = `<p style="color:red;">Error loading data. Please try again later.</p>`;
     });
 }
@@ -206,7 +205,7 @@ function fetchAndUpdateValues() {
         console.error('Error fetching /values:', error);
         const errorDiv = document.getElementById('error');
         if (errorDiv) {
-            errorDiv.textContent = 'Error loading data. Please try again later.';
+            //errorDiv.textContent = 'Error loading data. Please try again later.';
         }
     });
 }
