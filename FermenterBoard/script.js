@@ -7,8 +7,8 @@ var keyTranslations = {
     id: "ID",
     wifi: "WiFi",
     ws: "Web Sockets",
-    relay1: "Cooling",
-    relay2: "Heating",
+    relay1: "Heating",
+    relay2: "Cooling",
     ip: "IP Address",
 };
 
