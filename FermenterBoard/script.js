@@ -33,9 +33,12 @@ function buildPage() {
             <h3>(<span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
         </header>
       `;
-  
+      var deviceName = "n/a";
       // Build the info content
       const infoContent = Object.entries(info).map(([key, value]) => {
+        if (key == "name") {
+            deviceName = value;
+        }
         if (key == "localUrl" || key == "ip") {
             return `<p class="key"><strong>${keyTranslations[key]}:</strong></p>
             <p class="value">${value}
@@ -59,6 +62,7 @@ function buildPage() {
                 <p><span id="relay1" class="indicator ${values.relay1 ? 'enabled' : 'disabled'}"><i>${values.relay1 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay1"]}</span></p>
                 <p><span id="relay2" class="indicator ${values.relay2 ? 'enabled' : 'disabled'}"><i>${values.relay2 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay2"]}</span></p>
             </div>
+            <!-- TARGET SECTION -->
             <div class="section info">
                 <div class="text-center">
                     <h4 id="set-header" class="btn btn-success dropdown-toggle">
@@ -67,10 +71,10 @@ function buildPage() {
                     </h4>
                 </div>
                 <form target="#" id="set" class="card">
-                    <div class="mb-3"> <!-- or use 'form-group' for spacing -->
-                        <div id="feedback" class="alert"></div>
+                    <div class="mb-3">
+                        <div id="target-feedback" class="alert"></div>
                         <div class="input-group">
-                            <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="targetFeedback" />
+                            <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="target-feedback" />
                             <span class="input-group-text">˚C</span>
                             <button class="btn btn-primary" type="submit">Submit</button>
                         </div>
@@ -78,6 +82,27 @@ function buildPage() {
                     </div>
                 </form>
             </div>
+            <!-- END TARGET SECTION -->
+            <!-- NAME SECTION -->
+            <div class="section info">
+                <div class="text-center">
+                    <h4 id="name-header" class="btn btn-success dropdown-toggle">
+                        Device name
+                        <span class="caret"></span>
+                    </h4>
+                </div>
+                <form target="#" id="name" class="card">
+                    <div class="mb-3">
+                        <div id="name-feedback" class="alert"></div>
+                        <div class="input-group">
+                            <input type="text" id="name" name="name", value="${deviceName}" class="form-control" placeholder="Device name" aria-label="Device name" aria-describedby="name-feedback" />
+                            <button class="btn btn-primary" type="submit">Submit</button>
+                        </div>
+                        <div class="text-center small-info">Device will reboot after saving</div>
+                    </div>
+                </form>
+            </div>
+            <!-- END NAME SECTION -->
             <div class="section info">
                 <div class="text-center">
                     <h4 id="info-header" class="btn btn-warning dropdown-toggle">
@@ -122,6 +147,10 @@ function buildPage() {
         $("#set").toggle("fast");
     });
     $("#set").hide();
+    $("#name-header").click(function(){
+        $("#name").toggle("fast");
+    });
+    $("#name").hide();
     $("#info-header").click(function(){
         $("#info").toggle("fast");
     });
@@ -132,9 +161,13 @@ function buildPage() {
     $("#modules").hide();
     setLastUpdated();
 
-    $('form').on('submit', function(event) {
+    $('form#set').on('submit', function(event) {
         event.preventDefault();
-        submitData();
+        submitData("target");
+    });
+    $('form#name').on('submit', function(event) {
+        event.preventDefault();
+        submitData("name");
     });
 
     $("#feedback").hide();
@@ -191,20 +224,22 @@ function setLastUpdated() {
     }
 }
 
-function submitData() {
-    const targetValue = $('input[name="target"]').val();
+function submitData(inputName) {
+    const value = $('input[name="' + inputName + '"]').val();
     const apiEndpoint = '/';
     $.ajax({
         url: apiEndpoint,
         type: 'POST',
-        data: { target: targetValue },
+        data: {
+            [inputName]: value
+        },
         success: function(data) {
-            $('input[name="target"]').val("");
+            $('input[name="' + inputName + '"]').val("");
             fetchAndUpdateValues();
 
             console.log('Form submitted:', data);
-            const inputField = $('#target');
-            const feedbackContainer = $('#feedback');
+            const inputField = $('#' + inputName);
+            const feedbackContainer = $('#' + inputName + 'feedback');
             if (data.success) {
                 feedbackContainer.removeClass('alert-danger').addClass('alert-success').text('Success: The new target temperature is ' + data.target + '˚C');
                 inputField.removeClass('is-invalid').addClass('is-valid');
@@ -224,7 +259,6 @@ function submitData() {
             feedbackContainer.show("fast").delay(3000).hide("fast");
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            
             let message = 'An error occurred while submitting the form. Please try again.';
             if (jqXHR.responseText) {
                 try {
@@ -232,12 +266,12 @@ function submitData() {
                     message = response.message;
                     
                 } catch (e) {
-                    alert();
+                    alert(e);
                 }
             }
             console.error('Error submitting form:', textStatus, errorThrown);
-            const inputField = $('#target');
-            const feedbackContainer = $('#feedback');
+            const inputField = $('#' + inputName);
+            const feedbackContainer = $('#' + inputName + 'feedback');
             feedbackContainer.removeClass('alert-success').addClass('alert-danger').text(message);
             inputField.removeClass('is-valid').addClass('is-invalid');
             feedbackContainer.show("fast").delay(3000).hide("fast");
