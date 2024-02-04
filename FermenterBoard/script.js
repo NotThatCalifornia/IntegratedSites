@@ -205,7 +205,7 @@ function fetchAndUpdateValues() {
         console.error('Error fetching /values:', error);
         const errorDiv = document.getElementById('error');
         if (errorDiv) {
-            //errorDiv.textContent = 'Error loading data. Please try again later.';
+            errorDiv.textContent = 'Error loading data. Please try again later.';
         }
     });
 }
