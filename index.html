@@ -1,99 +1,117 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    
-        <!-- Bootstrap CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-        <!-- Custom CSS -->
         <link href="style.css" rel="stylesheet">
     
-        <title>Modular Landing Page</title>
+        <title>Not That California Brewing Hardware Company</title>
     </head>
 <body>
-    <!-- Navigation Module -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="#">Brand</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Pricing</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Contact</a>
-                    </li>
-                </ul>
-            </div>
+<!-- Navigation Module -->
+<nav id="mainNav" class="navbar navbar-expand-lg navbar-light bg-white fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <img src="img/logo.png" alt="Logo"> <!-- No inline style needed, height is controlled by CSS -->
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Features</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Pricing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>   
         </div>
-    </nav>
+    </div>
+</nav>
 
 <!-- Image and Content Section -->
-<section class="container my-5">
+<section class="container my-5 first-section">
     <div class="row align-items-center">
         <div class="col-lg-6 mb-4 mb-lg-0 text-center">
             <img src="img/phone.png" class="img-fluid rounded mx-auto d-block" alt="Responsive image">
         </div>
         <div class="col-lg-6">
-            <h2>Title Here</h2>
-            <p class="fst-italic">Subtitle in italics</p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <h2>Brewery Automation</h2>
+            <p class="fst-italic">That doesn't break the bank!</p>
+            <p>We offer a range of solutions for small to medium breweries that don't have or cannot afford a turn-key solutions to automate tasks around the brewery.</p>
+            <!--<div class="d-grid gap-2 d-md-flex justify-content-md-start">
                 <a href="#" class="btn btn-primary mt-3">Button Text</a>
-            </div>
+            </div>-->
         </div>
     </div>
 </section>
 
+
+
 <!-- Hero Carousel Section -->
 <section id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="8000">
     <!-- Indicators/dots -->
-    <div class="carousel-indicators">
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    <div class="carousel-indicators-wrapper">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
     </div>
 
     <!-- Carousel inner -->
     <div class="carousel-inner">
         <!-- Slide 1 -->
-        <div class="carousel-item active">
-            <img src="img/hero-placeholder.jpg" class="d-block w-100" alt="Hero Image 1">
+        <div class="carousel-item active" style="height: 60vh;">
+            <img src="img/brewery.jpeg" class="d-block w-100" alt="Hero Image 1" style="object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h2>Title Here</h2>
+                <p>Description Here</p>
+                <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
         </div>
         <!-- Slide 2 -->
-        <div class="carousel-item">
-            <img src="img/hero-placeholder.jpg" class="d-block w-100" alt="Hero Image 2">
+        <div class="carousel-item" style="height: 60vh;">
+            <img src="img/brewery.jpeg" class="d-block w-100" alt="Hero Image 1" style="object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h2>Title Here</h2>
+                <p>Description Here</p>
+                <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
         </div>
         <!-- Slide 3 -->
-        <div class="carousel-item">
-            <img src="img/hero-placeholder.jpg" class="d-block w-100" alt="Hero Image 3">
+        <div class="carousel-item" style="height: 60vh;">
+            <img src="img/brewery.jpeg" class="d-block w-100" alt="Hero Image 1" style="object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h2>Title Here</h2>
+                <p>Description Here</p>
+                <a href="#" class="btn btn-primary">Learn More</a>
+            </div>
         </div>
     </div>
 
-    <!-- Controls/chevrons -->
+    <!-- Controls/chevrons with Font Awesome icons -->
     <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="carousel-control-prev-icon" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
         <span class="visually-hidden">Previous</span>
     </button>
     <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="carousel-control-next-icon" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
         <span class="visually-hidden">Next</span>
     </button>
 </section>
+
+
+
 
 <!-- Features Module -->
 <section class="container my-5">
@@ -102,33 +120,33 @@
         <div class="col-lg-4 mb-5">
             <div class="feature bg-light p-4">
                 <div class="icon-container mb-3">
-                    <i class="far fa-anchor fa-3x"></i> <!-- Use the 'far' prefix for lighter icons -->
+                    <i class="far fa-boxes-stacked fa-3x text-primary"></i> <!-- Use the 'far' prefix for lighter icons -->
                 </div>
-                <h2 class="h4">Feature One</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
-                <a href="#" class="btn btn-primary">Learn More</a>
+                <h2 class="h4">Standalone modules</h2>
+                <p>If you only need to automate a single task around the brewery, all modules work on their own. They won't be connected to the cloud and there are no hidden fees.</p>
+                <!-- <a href="#" class="btn btn-primary">Learn More</a> -->
             </div>
         </div>
         <!-- Feature 2 -->
         <div class="col-lg-4 mb-5">
             <div class="feature bg-light p-4">
                 <div class="icon-container mb-3">
-                    <i class="far fa-bolt fa-3x"></i> <!-- Use the 'far' prefix for lighter icons -->
+                    <i class="far fa-cloud fa-3x text-primary"></i> <!-- Use the 'far' prefix for lighter icons -->
                 </div>
-                <h2 class="h4">Feature Two</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
-                <a href="#" class="btn btn-primary">Learn More</a>
+                <h2 class="h4">Cloud enabled</h2>
+                <p><b><i>COMING SOON!</i></b> We're working hard to bring you a secure way to connect to your brewery remotely and to see how the brewery is doing so that you can spend more time with your family instead of worrying about the next broken down chiller unit!</p>
+                <!-- <a href="#" class="btn btn-primary">Learn More</a> -->
             </div>
         </div>
         <!-- Feature 3 -->
         <div class="col-lg-4 mb-5">
             <div class="feature bg-light p-4">
                 <div class="icon-container mb-3">
-                    <i class="far fa-heart fa-3x"></i> <!-- Use the 'far' prefix for lighter icons -->
+                    <i class="far fa-server fa-3x text-primary"></i> <!-- Use the 'far' prefix for lighter icons -->
                 </div>
-                <h2 class="h4">Feature Three</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit...</p>
-                <a href="#" class="btn btn-primary">Learn More</a>
+                <h2 class="h4">Local server</h2>
+                <p><b><i>COMING SOON!</i></b> Q2 we will be launching a local monitoring station that will allow you to display your brewery state from kettle, through heat exchanger to fermentation vessels. You will also be able to compare your brews side by side to ensure you're brewing a consistent product.</p>
+                <!-- <a href="#" class="btn btn-primary">Learn More</a> -->
             </div>
         </div>
     </div>
@@ -139,9 +157,9 @@
 <section class="container my-5">
     <div class="row align-items-center">
         <div class="col-lg-6">
-            <h2>Title Here</h2>
-            <p class="fst-italic">Subtitle in italics</p>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <h2>Power Cost Projectings</h2>
+            <p class="fst-italic">Know how much electrity you use on each batch</p>
+            <p>We have started building our brewery during the pandemic, cost of energy hiked and then were hit by the cost of living crisis. That's why all our modules (where it makes sense), will offer an optional addon to measure exact power consumption giving you a better idea of what are the costs of each batch of beer.</p>
             <div class="d-grid gap-2 d-md-flex justify-content-md-start">
                 <a href="#" class="btn btn-primary mt-3">Button Text</a>
             </div>
@@ -174,160 +192,160 @@
 </section>
 
 
+
+
 <!-- Products Section -->
-<section class="container my-5">
-    <div class="row">
-        <div class="col-12 text-center mb-4">
-            <h2>Products</h2>
+<!-- Products Section -->
+<!-- Products Section -->
+<section class="products-section py-5">
+    <div class="container">
+        <!-- Accordion -->
+        <div class="accordion" id="productsAccordion">
+            <!-- Product 1 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        <img src="img/phone.png" class="product-image" alt="Product 1">
+                        <span class="product-info">
+                            <span class="product-name">Fermentation Controller</span><br>
+                            <span class="product-subtitle">Wifi connected fermentation controller</span>
+                        </span>
+                        <span>£189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#productsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">Long description of the product...</p>
+                        <ul class="features-list">
+                            <li class="feature-item">1x heating relay</li>
+                            <li class="feature-item">1x relay to control chiller</li>
+                            <li class="feature-item">1x relay to control a 12V solenoid for cooling pipe</li>
+                            <li class="feature-item">Wifi management</li>
+                            <li class="feature-item">Display</li>
+                            <li class="feature-item">Lifetime support through our support forum</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 2 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">Underback Controller</span><br>
+                            <span class="product-subtitle">Always get the right amount of wort from your mash tun</span>
+                        </span>
+                        <span>From £189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#productsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            Monitor and control exactly how much work has gone in the kettle and stop the transfer right on the money. Optional valve on the sparge water can even stop any new water from coming ince you done.<br>
+                            Plus, we've seen too many brewers running 220V through their underback float switches putting all in danger, this product should be an easy 1-for-1 replacement. Or have you ever had a delivery during the last few minutes of sparging, forgot and ended with wort being too dilluted? Haha, yeah, we had it all.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">2x low voltage float switch connections</li>
+                            <li class="feature-item">1x sparge water valve control</li>
+                            <li class="feature-item">2x float switches *</li>
+                            <li class="feature-item">1x sparge water valve *</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 3 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">Heat Exchanger Controller</span><br>
+                            <span class="product-subtitle">Start chilling and forget for the night</span>
+                        </span>
+                        <span>From £189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                    </button>
+                </h2>
+                <div id="collapse3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#productsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            After a very long day brewing, chilling your wort can take forever. When is the last time you've even seen your kids? :)<br>
+                            With the heat exchanger controller you get three temperature sensors, flow meter and an electricly actuated water valve. All these working together will give you
+                            the readings on temperature of water coming in, wort in and wort out. All these readings will give you an idea when will you finish and een better, wen you done chlling,
+                            the electronically managed butterfly valves (* optional, connections present) can start a transfer automatically into your fermenter.<br>
+                            When the kettle is empty, pump turns off and valves close, all ready to be disconnected in the morning while you already in bed monitoring everything from your phone.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">Automatic transfer when work is chilled, set and forget</li>
+                            <li class="feature-item">Programable hop rests (temperature &amp; time)</li>
+                            <li class="feature-item">1x transfer pump relay</li>
+                            <li class="feature-item">2x sanitary valve control for automatic transfer</li>
+                            <li class="feature-item">2x sanitary actuated valves *</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 4 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading3">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">InkBird chiller addon</span><br>
+                            <span class="product-subtitle">Chill multiple fermenters from a single chiller</span>
+                        </span>
+                        <span>£79</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                    </button>
+                </h2>
+                <div id="collapse3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#productsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            If you are using an InkBird to manage your fermenters temperature, you might want to use one chiller (like MAXI310) to cool multiple fermenters.
+                            For this usecase we have a "not too smart" box that will automatically allow coolant to flow through your lines when the chiller mode of your InkBird is triggered.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">Works with any "Amazon" temperature control. UK socket only.</li>
+                            <li class="feature-item">PLED indicator</li>
+                            <li class="feature-item">Power adapter</li>
+                            <li class="feature-item">3/8" JG push-fit fittings or 1/2" BSP</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
+        <p class="text-center small text-muted">* items marked with a star are optional and will be chaged separately</p>
     </div>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Product 1 -->
-        <div class="col">
-            <div class="product-card card h-100 border-0 rounded-3">
-                <img src="img/phone.png" class="card-img-top rounded-top" alt="...">
-                <div class="card-body text-center bg-light-orange">
-                    <h5 class="card-title">Product Title 1</h5>
-                    <h6 class="card-subtitle mb-2">Product Subtitle 1</h6>
-                    <ul class="list-unstyled">
-                        <!-- List of features -->
-                        <li>Feature 1</li>
-                        <li>Feature 2</li>
-                        <li>Feature 3</li>
-                        <!-- Add more list items as needed -->
-                    </ul>
-                    <p class="card-text">Price: $99</p>
-                    <a href="#" class="btn btn-buy btn-primary">Buy</a>
-                </div>
-            </div>
-        </div>
-        <!-- Repeat for other products, Product 2, Product 3, ... up to Product 7 -->
-    </div>
-</section>
+</div>
+
+
+
+
 
 <!-- Logo and Statement Section -->
 <section class="container my-5">
     <div class="row align-items-center">
         <div class="col-lg-3 col-md-4 text-center text-md-start">
-            <img src="path-to-your-logo.png" class="img-fluid" alt="Company Logo">
+            <img src="img/logo.png" class="img-fluid" alt="Company Logo">
         </div>
         <div class="col-lg-9 col-md-8 text-center">
-            <h2 class="display-5 fw-bold">Your Big Statement Goes Here</h2>
-            <p class="lead">Supporting text to elaborate on the big statement and provide more details.</p>
+            <h2 class="display-5 fw-bold">Made by brewers, for brewers!</h2>
+            <p class="lead">We are a working brewery based in a small village called California in Central Scotland. We don't just make some products, we make things to make our life easier and want to share them with you!</p>
         </div>
     </div>
 </section>
@@ -376,31 +394,33 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <h5>Contact</h5>
                 <ul class="list-unstyled small">
-                    <li>Phone: +1 (555) 123-4567</li>
-                    <li>Email: contact@example.com</li>
+                    <li>Phone: +44 (0) 7972574949</li>
+                    <li>Email: info@notthatcalifornia.com</li>
                 </ul>
             </div>
             <!-- Address -->
             <div class="col-lg-3 col-md-6 mb-3">
                 <h5>Address</h5>
                 <address class="small">
-                    123 Street Name<br>
-                    City, State 12345<br>
-                    Country
+                    Braeview Farm<br>
+                    California<br>
+                    Falkirk, FK12DH<br>
+                    Scotland<br>
+                    United Kingdom
                 </address>
             </div>
             <!-- Webshop Link -->
             <div class="col-lg-3 col-md-6 mb-3">
                 <h5>Webshop</h5>
                 <ul class="list-unstyled small">
-                    <li><a href="https://your-webshop-link.com" class="text-dark">Visit our Webshop</a></li>
+                    <li><a href="https://notthatcalifornia.com/collections/brewing-hardware" class="text-dark">Visit our Webshop</a></li>
                 </ul>
             </div>
         </div>
         <!-- Email at the bottom -->
         <div class="row">
             <div class="col-12 mt-5 mb-5 text-left">
-                <p class="small mb-0">Email: contact@example.com</p>
+                <p class="mb-0 large"><a href="mailto:info@notthatcalifornia.com">info@notthatcalifornia.com</a></p>
             </div>
         </div>
     </div>
@@ -409,18 +429,22 @@
 <!-- Messenger Chat plugin Code -->
 <div id="fb-root"></div>
 
-<!-- Your customer chat code -->
+<!-- Your Chat plugin code -->
 <div id="fb-customer-chat" class="fb-customerchat">
 </div>
 
 <script>
   var chatbox = document.getElementById('fb-customer-chat');
-  chatbox.setAttribute("page_id", "YOUR_PAGE_ID");
-  chatbox.setAttribute("attribution", "setup_tool");
+  chatbox.setAttribute("page_id", "103108127903768");
+  chatbox.setAttribute("attribution", "biz_inbox");
+</script>
+
+<!-- Your SDK code -->
+<script>
   window.fbAsyncInit = function() {
     FB.init({
       xfbml            : true,
-      version          : 'v11.0'
+      version          : 'v19.0'
     });
   };
 
@@ -428,14 +452,13 @@
     var js, fjs = d.getElementsByTagName(s)[0];
     if (d.getElementById(id)) return;
     js = d.createElement(s); js.id = id;
-    js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js';
+    js.src = 'https://connect.facebook.net/en_GB/sdk/xfbml.customerchat.js';
     fjs.parentNode.insertBefore(js, fjs);
   }(document, 'script', 'facebook-jssdk'));
 </script>
 
-
-<!-- Bootstrap Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
