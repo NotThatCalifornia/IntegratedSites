@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+        <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"> -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="style.css" rel="stylesheet">
     
@@ -25,13 +25,10 @@
                     <a class="nav-link active" aria-current="page" href="#">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Features</a>
+                    <a class="nav-link" href="#prices">Prices</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Pricing</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Contact</a>
+                    <a class="nav-link" href="#contact">Contact</a>
                 </li>
             </ul>   
         </div>
@@ -74,9 +71,12 @@
         <div class="carousel-item active" style="height: 60vh;">
             <img src="img/brewery.jpeg" class="d-block w-100" alt="Hero Image 1" style="object-fit: cover;">
             <div class="carousel-caption d-none d-md-block">
-                <h2>Title Here</h2>
+                <!-- <h2>Title Here</h2>
                 <p>Description Here</p>
-                <a href="#" class="btn btn-primary">Learn More</a>
+                <a href="#" class="btn btn-primary">Learn More</a> -->
+                <div class="col-lg-6 mb-4 mb-lg-0 text-center">
+                    <img src="img/phone.png" class="img-fluid rounded mx-auto d-block" alt="Responsive image">
+                </div>
             </div>
         </div>
         <!-- Slide 2 -->
@@ -160,9 +160,9 @@
             <h2>Power Cost Projectings</h2>
             <p class="fst-italic">Know how much electrity you use on each batch</p>
             <p>We have started building our brewery during the pandemic, cost of energy hiked and then were hit by the cost of living crisis. That's why all our modules (where it makes sense), will offer an optional addon to measure exact power consumption giving you a better idea of what are the costs of each batch of beer.</p>
-            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+            <!-- <div class="d-grid gap-2 d-md-flex justify-content-md-start">
                 <a href="#" class="btn btn-primary mt-3">Button Text</a>
-            </div>
+            </div> -->
         </div>
         <div class="col-lg-6 mb-4 mb-lg-0 text-center">
             <img src="img/phone.png" class="img-fluid rounded mx-auto d-block" alt="Responsive image">
@@ -170,48 +170,29 @@
     </div>
 </section>
 
-<!-- Parallax Background Section -->
-<section class="parallax-section">
+
+
+
+<!-- Products Section -->
+<!-- Products Section -->
+<!-- Products Section -->
+<section id="prices" class="products-section py-5">
     <div class="container">
-        <div class="row align-items-center">
-            <!-- Image Column -->
-            <div class="col-md-4">
-                <img src="img/phone.png" class="img-fluid" alt="Descriptive Alt Text">
-            </div>
-            <!-- Content Column -->
-            <div class="col-md-8">
-                <div class="text-content">
-                    <h2>Title Here</h2>
-                    <h3 class="subtitle">Subtitle Here</h3>
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque imperdiet consectetur dolor in elementum.</p>
-                    <a href="#" class="btn btn-primary">Click Me</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-
-
-<!-- Products Section -->
-<!-- Products Section -->
-<!-- Products Section -->
-<section class="products-section py-5">
-    <div class="container">
+        <h2 class="text-center">Available now</h2>
+        <p>&nbsp;</p>
         <!-- Accordion -->
         <div class="accordion" id="productsAccordion">
             <!-- Product 1 -->
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingOne">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                        <img src="img/phone.png" class="product-image" alt="Product 1">
+                        <img src="img/ferm.jpg" class="product-image" alt="Product 1">
                         <span class="product-info">
                             <span class="product-name">Fermentation Controller</span><br>
                             <span class="product-subtitle">Wifi connected fermentation controller</span>
                         </span>
                         <span>£189</span>
-                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Shop ...</a>
                     </button>
                 </h2>
                 <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#productsAccordion">
@@ -236,13 +217,13 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="headingTwo">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <img src="img/underback.jpg" class="product-image" alt="Product 2">
                         <span class="product-info">
                             <span class="product-name">Underback Controller</span><br>
                             <span class="product-subtitle">Always get the right amount of wort from your mash tun</span>
                         </span>
                         <span>From £189</span>
-                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Shop ...</a>
                     </button>
                 </h2>
                 <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#productsAccordion">
@@ -264,17 +245,51 @@
                     </div>
                 </div>
             </div>
-            <!-- Product 3 -->
+            <!-- Product 2 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingCO2">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCO2" aria-expanded="false" aria-controls="collapseCO2">
+                        <img src="img/lv.jpg" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">CO2 Helper</span><br>
+                            <span class="product-subtitle">Control carbonation remotely</span>
+                        </span>
+                        <span>From £149</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Preorder ...</a>
+                    </button>
+                </h2>
+                <div id="collapseCO2" class="accordion-collapse collapse" aria-labelledby="headingCO2" data-bs-parent="#comingProductsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            Whetever you carbonate in a tank or kegs, this device can help you achieve consistent carbonation through monitoring 
+                            temperature as well as the pressure applied. You only have to set the desired carbonation level. You can also see the 
+                            progress through your mobile phone app. When the carbonation is done, an optional co2 release valve can drop the pressure
+                            to a pre specified pressure to avoid over-carbonation.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">1x 3/8" JG push-fit valve</li>
+                            <li class="feature-item">1x ambient/tank temperature sensor</li>
+                            <li class="feature-item">1x pressure sensor (tri clamp or BSP) *</li>
+                            <li class="feature-item">1x release pressure valve *</li>
+                            <li class="feature-item">Automatically adjust time based on temperature and pressure</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 3 -- >
             <div class="accordion-item">
                 <h2 class="accordion-header" id="heading3">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapseTwo">
-                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <img src="img/heatx.jpg" class="product-image" alt="Product 2">
                         <span class="product-info">
                             <span class="product-name">Heat Exchanger Controller</span><br>
                             <span class="product-subtitle">Start chilling and forget for the night</span>
                         </span>
                         <span>From £189</span>
-                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Shop ...</a>
                     </button>
                 </h2>
                 <div id="collapse3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#productsAccordion">
@@ -304,13 +319,13 @@
             <div class="accordion-item">
                 <h2 class="accordion-header" id="heading3">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapseTwo">
-                        <img src="img/phone.png" class="product-image" alt="Product 2">
+                        <img src="img/box.jpeg" class="product-image" alt="Product 2">
                         <span class="product-info">
                             <span class="product-name">InkBird chiller addon</span><br>
                             <span class="product-subtitle">Chill multiple fermenters from a single chiller</span>
                         </span>
                         <span>£79</span>
-                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Buy</a>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Shop ...</a>
                     </button>
                 </h2>
                 <div id="collapse3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#productsAccordion">
@@ -329,11 +344,191 @@
                 </div>
             </div>
         </div>
+        
+        
+        
+        
+        
+        <p>&nbsp;</p>
+        <h2 class="text-center">Coming soon!</h2>
+        <p>&nbsp;</p>
+        <!-- Accordion -->
+        <div class="accordion" id="comingProductsAccordion">
+            <!-- Product 3 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading21">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse21" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/heatx.jpg" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">Heat Exchanger Controller</span><br>
+                            <span class="product-subtitle">Start chilling and forget for the night</span>
+                        </span>
+                        <span>From £189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Preorder ...</a>
+                    </button>
+                </h2>
+                <div id="collapse21" class="accordion-collapse collapse" aria-labelledby="heading21" data-bs-parent="#comingProductsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            After a very long day brewing, chilling your wort can take forever. When is the last time you've even seen your kids? :)<br>
+                            With the heat exchanger controller you get three temperature sensors, flow meter and an electricly actuated water valve. All these working together will give you
+                            the readings on temperature of water coming in, wort in and wort out. All these readings will give you an idea when will you finish and een better, wen you done chlling,
+                            the electronically managed butterfly valves (* optional, connections present) can start a transfer automatically into your fermenter.<br>
+                            When the kettle is empty, pump turns off and valves close, all ready to be disconnected in the morning while you already in bed monitoring everything from your phone.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">Automatic transfer when work is chilled, set and forget</li>
+                            <li class="feature-item">Programable hop rests (temperature &amp; time)</li>
+                            <li class="feature-item">1x transfer pump relay</li>
+                            <li class="feature-item">2x sanitary valve control for automatic transfer</li>
+                            <li class="feature-item">2x sanitary actuated valves *</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 1 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading21">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse21" aria-expanded="false" aria-controls="collapse21">
+                        <img src="img/relay.jpg" class="product-image" alt="Product 1">
+                        <span class="product-info">
+                            <span class="product-name">HLT Controller</span><br>
+                            <span class="product-subtitle">Wifi connected HLT controller</span>
+                        </span>
+                        <span>£189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Preorder ...</a>
+                    </button>
+                </h2>
+                <div id="collapse21" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#comingProductsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">Long description of the product...</p>
+                        <ul class="features-list">
+                            <li class="feature-item">3x heating relay</li>
+                            <li class="feature-item">1x recirculation relay</li>
+                            <li class="feature-item">1x temperature sensor</li>
+                            <li class="feature-item">Wifi management</li>
+                            <li class="feature-item">Display</li>
+                            <li class="feature-item">Lifetime support through our support forum</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                            <li class="feature-item text-muted"><i>COMING!</i> Solar energy assistant, heat water, don't sell your kwh</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Product 2 -->
+            <!-- <div class="accordion-item">
+                <h2 class="accordion-header" id="headingTwo">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/lv.jpg" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">CO2 Helper</span><br>
+                            <span class="product-subtitle">Control caronation remotely</span>
+                        </span>
+                        <span>From £189</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Preorder ...</a>
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#comingProductsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">1x 3/8" JG push-fit valve</li>
+                            <li class="feature-item">1x ambient/tank temperature sensor</li>
+                            <li class="feature-item">1x pressure sensor (tri clamp or BSP) *</li>
+                            <li class="feature-item">Automatically adjust time based on temperature and pressure</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div> -->
+            <!-- Product 4 -->
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading23">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse23" aria-expanded="false" aria-controls="collapseTwo">
+                        <img src="img/master.jpg" class="product-image" alt="Product 2">
+                        <span class="product-info">
+                            <span class="product-name">Kettle controller</span><br>
+                            <span class="product-subtitle">Manage and monitor your kettle</span>
+                        </span>
+                        <span>From £489</span>
+                        <a href="#" class="btn btn-primary buy-button" style="margin-left: 24px;">Preorder ...</a>
+                    </button>
+                </h2>
+                <div id="collapse23" class="accordion-collapse collapse" aria-labelledby="heading23" data-bs-parent="#comingProductsAccordion">
+                    <div class="accordion-body">
+                        <p class="product-description">
+                            Ultimate control unit for the heart of your brewery.
+                        </p>
+                        <ul class="features-list">
+                            <li class="feature-item">12x power relay output</li>
+                            <li class="feature-item">14x programmable button input</li>
+                            <li class="feature-item">1x pressure sensor to calculate amount of liquid *</li>
+                            <li class="feature-item">3x temperature sensor</li>
+                            <li class="feature-item">1x float switch to detect empty kettle</li>
+                            <li class="feature-item">Wifi management</li>
+                            <li class="feature-item">Fully wired and turn-key configured option *</li>
+                            <li class="feature-item">Display</li>
+                            <li class="feature-item">Lifetime support through our support forum</li>
+                            <li class="feature-item">Free firmware updates for life as they become available</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Batch motitoring and comparison</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Cloud remote monitoring and control</li>
+                            <li class="feature-item text-muted"><i>COMING SOON!</i> Local server monitoring</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <p class="text-center small text-muted">* items marked with a star are optional and will be chaged separately</p>
     </div>
 </div>
 
 
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+
+<!-- Parallax Background Section -->
+<section class="parallax-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="text-content">
+                    <h2>Solar Master</h2>
+                    <h3 class="subtitle">COMING Q3 2024</h3>
+                    <p>
+                        Shortly, we will have the capability to integrate with your solar units. 
+                        Our system will enable the simulation of a battery using your HLT (Hot Liquer Tank). 
+                        Given the prevailing rates for electricity sales, it may prove more economical to 
+                        conserve energy in the form of hot water. Additionally, you will have the flexibility to 
+                        prioritise whether your preference lies in ensuring an ample supply of hot water or in utilising 
+                        freely generated electricity to power your devices.
+                    </p>
+                    <a href="mailto:info@notthatcalifornia.com" class="btn btn-primary">Please enquire about your system</a>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <img src="img/phone.png" class="img-fluid" alt="Descriptive Alt Text">
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<p>&nbsp;</p><p>&nbsp;</p>
 
 
 
@@ -350,8 +545,13 @@
     </div>
 </section>
 
+
+
+<p>&nbsp;</p><p>&nbsp;</p>
+
+
 <!-- Contact Module -->
-<section class="bg-light py-5">
+<section id="contact" class="bg-light py-5">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-6">
@@ -375,6 +575,8 @@
         </div>
     </div>
 </section>
+
+
 
 <!-- Footer -->
 <footer class="bg-white text-dark py-5">
@@ -457,7 +659,7 @@
   }(document, 'script', 'facebook-jssdk'));
 </script>
 
-  
+<script src="https://kit.fontawesome.com/9d5e5a9880.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
 </body>

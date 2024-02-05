@@ -3,7 +3,9 @@
 .large {
     font-size: larger;
 }
-
+.container {
+    margin-bottom: 64px!important;
+}
 
 
 
@@ -331,7 +333,7 @@
 /* Parallax Background Section Styles */
 .parallax-section {
     position: relative;
-    background: url('img/brewery.jpeg') no-repeat fixed center;
+    background: url('img/solar.jpeg') no-repeat fixed center;
     background-size: cover;
     padding: 100px 0;
 }
