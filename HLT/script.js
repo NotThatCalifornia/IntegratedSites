@@ -10,6 +10,9 @@ var keyTranslations = {
     relay1: "Heating",
     relay2: "Cooling",
     ip: "IP Address",
+    min: "Min temperature",
+    max: "Max temperature",
+    content: "Content",
 };
 
 function buildPage() {
@@ -19,50 +22,70 @@ function buildPage() {
       fetch('/info').then(response => response.json()),
       fetch('/modules').then(response => response.json())
     ]).then(([values, info, modules]) => {
-      // Extract temperature and update the title
-      const temperature = values.temp1.toFixed(2);
-      const internalTemperature = values.int.toFixed(2);
-      const targetTemperature = values.targetTemp.toFixed(2);
-      document.title = `Brewery name - ${temperature}˚C`;
-  
+        // Extract temperature and update the title
+        const temperature = values.temp1.toFixed(2);
+        const internalTemperature = values.int.toFixed(2);
+        const targetTemperature = values.targetTemp.toFixed(2);
+        document.title = `Brewery HLT - ${temperature}˚C`;
+    
+        var deviceName = "n/a";
+        var deviceType = "n/a";
+        // Build the info content
+        const infoContent = Object.entries(info).map(([key, value]) => {
+            if (key == "name") {
+                deviceName = value;
+            }
+            if (key == "desc") {
+                deviceType = value;
+            }
+            if (key == "localUrl" || key == "ip") {
+                return `<p class="key"><strong>${keyTranslations[key]}:</strong></p>
+                <p class="value">${value}
+                    <a href="http://${value}" class="btn btn-success">Go</a>
+                </p>`;
+            } else {
+                return `<p class="key"><strong>${keyTranslations[key]}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
+            }
+    }).join('');
       
-      var deviceName = "n/a";
-      // Build the info content
-      const infoContent = Object.entries(info).map(([key, value]) => {
-        if (key == "name") {
-            deviceName = value;
-        }
-        if (key == "localUrl" || key == "ip") {
-            return `<p class="key"><strong>${keyTranslations[key]}:</strong></p>
-            <p class="value">${value}
-                <a href="http://${value}" class="btn btn-success">Go</a>
-            </p>`;
-        } else {
-            return `<p class="key"><strong>${keyTranslations[key]}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
-        }
-      }).join('');
-  
-      // Build the modules content
-      const modulesContent = Object.entries(modules).map(([key, value]) => {
-        return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations[key]}</span></p>`;
-      }).join('');
+    // Build the header content
+    const headerContent = `
+    <header>
+        <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
+        <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}<span>˚C</h1>
+        <p class="tankContent">${values.content}</p>
+        <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
+    </header>
+    `;
 
-      // Build the header content
-      const headerContent = `
-        <header>
-            <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
-            <h1><b class="device-name">${deviceName.toUpperCase()}</b><br><span id="temperature">${temperature}<span>˚C</h1>
-            <h3>(<span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
-        </header>
-      `;
+    // Build the modules content
+    const modulesContent = Object.entries(modules).map(([key, value]) => {
+        return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations[key]}</span></p>`;
+    }).join('');
   
-      // Combine all parts into the final HTML
-      const pageContent = `
+    // Combine all parts into the final HTML
+    var statusStyle = values.relay1 ? 'warning' : 'success';
+    var statusText = values.relay1 ? 'Heating' : 'Idle';
+    if (!values.enabled) {
+        statusText = "Off";
+        statusStyle = "secondary";
+    }
+    
+
+    const pageContent = `
         <div id="content">
             ${headerContent}
             <div class="section modules values">
-                <p><span id="relay1" class="indicator ${values.relay1 ? 'enabled' : 'disabled'}"><i>${values.relay1 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay1"]}</span></p>
-                <p><span id="relay2" class="indicator ${values.relay2 ? 'enabled' : 'disabled'}"><i>${values.relay2 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay2"]}</span></p>
+                <!--<p><span id="relay1" class="indicator ${values.relay1 ? 'enabled' : 'disabled'}"><i>${values.relay1 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay1"]}</span></p>-->
+                <div class="row justify-content-center align-items-center">
+                    <div class="col-auto">
+                        <div id="statusBox" class="form-check form-switch fs-2">
+                            <input class="form-check-input" type="checkbox"${values.enabled ? ' checked' : ''}>
+                            <label class="badge bg-${statusStyle}">${statusText}</label>
+                        </div>
+                    </div>
+                </div>
+                <br><br>
             </div>
             <!-- TARGET SECTION -->
             <div class="section info">
@@ -80,7 +103,7 @@ function buildPage() {
                             <span class="input-group-text">˚C</span>
                             <button class="btn btn-primary" type="submit">Submit</button>
                         </div>
-                        <div class="text-center small-info">Values between -10˚C and 45˚C</div>
+                        <div class="text-center small-info">Values between ${info.min}˚C and ${info.max}˚C</div>
                     </div>
                 </form>
             </div>
@@ -174,14 +197,46 @@ function buildPage() {
     $("#target-feedback").hide();
     $("#name-feedback").hide();
 
+
+
+    $('#statusBox input').change(function() {
+        if ($(this).is(':checked')) {
+            // The switch is checked, call the /enable endpoint
+            $.ajax({
+                url: '/enable',
+                type: 'POST', // Assuming the endpoint expects a POST request
+                success: function(response) {
+                    // Handle success
+                    console.log('Enabled', response);
+                },
+                error: function(xhr, status, error) {
+                    // Handle error
+                    console.error('Error enabling', error);
+                }
+            });
+        } else {
+            // The switch is not checked, call the /disable endpoint
+            $.ajax({
+                url: '/disable',
+                type: 'POST', // Assuming the endpoint expects a POST request
+                success: function(response) {
+                    // Handle success
+                    console.log('Disabled', response);
+                },
+                error: function(xhr, status, error) {
+                    // Handle error
+                    console.error('Error disabling', error);
+                }
+            });
+        }
+    });
+
+
+
     }).catch(error => {
       console.error('Error fetching data:', error);
       document.body.innerHTML = `<p style="color:red;">Error loading data. Please try again later.</p>`;
     });
-}
-
-function handleRelay(elementId, value) {
-    $(elementId).removeClass(value ? 'disabled' : 'enabled').addClass(value ? 'enabled' : 'disabled');
 }
 
 function fetchAndUpdateValues() {
@@ -196,9 +251,23 @@ function fetchAndUpdateValues() {
             $('#temperature').text(`${data.temp1.toFixed(2)}˚C`);
             $('#internalTemperature').text(`${data.int.toFixed(2)}˚C`);
             $('#targetTemperature').text(`${data.targetTemp.toFixed(2)}˚C`);
+            $('header .tankContent').text(data.content);
+            $('#statusBox label').text(data.status);
+            if (data.status == "Error") {
+                $('#statusBox label').removeClass().addClass("badge bg-danger");
+            } else if (data.status == "Off" || data.status == "Empty") {
+                $('#statusBox label').removeClass().addClass("badge bg-secondary");
+            } else {
+                if (data.relay1 == true) {
+                    $('#statusBox label').removeClass().addClass("badge bg-warning");
+                } else {
+                    $('#statusBox label').removeClass().addClass("badge bg-success");
+                }
+            }
+            //$('#statusBox label').removeClass().addClass(newClass);
+            $('#statusBox input').attr('checked', data.enabled);
 
-            handleRelay('#relay1', data.relay1);
-            handleRelay('#relay2', data.relay2);
+
 
             document.title = `Brewery name - ${data.temperature}˚C`;
             setLastUpdated();
