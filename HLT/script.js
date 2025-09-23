@@ -1,371 +1,572 @@
-var keyTranslations = {
-    localUrl: "Local URL",
-    name: "Name",
-    desc: "Description",
-    version: "Version",
-    manufacturer: "Manufacturer",
-    id: "ID",
-    wifi: "WiFi",
-    ws: "Web Sockets",
-    relay1: "Heating",
-    relay2: "Cooling",
-    ip: "IP Address",
-    min: "Min temperature",
-    max: "Max temperature",
-    content: "Content",
-};
+/**
+ * HLT UI — modern, structured JS (no jQuery)
+ * Consumes:
+ *  - GET /values, /info, /modules
+ *  - POST / (target=<float> | name=<string>)
+ *  - POST /enable, /disable
+ */
 
-function buildPage() {
-    // Fetch all required data
-    Promise.all([
-      fetch('/values').then(response => response.json()),
-      fetch('/info').then(response => response.json()),
-      fetch('/modules').then(response => response.json())
-    ]).then(([values, info, modules]) => {
-        // Extract temperature and update the title
-        const temperature = values.temp1.toFixed(2);
-        const internalTemperature = values.int.toFixed(2);
-        const internalHumidity = (values.intHumidity !== undefined && values.intHumidity !== null)
-            ? values.intHumidity.toFixed(1)
-            : 'n/a';
-        const targetTemperature = values.targetTemp.toFixed(2);
-        document.title = `Brewery HLT - ${temperature}˚C`;
-    
-        var deviceName = "n/a";
-        var deviceType = "n/a";
-        // Build the info content
-        const infoContent = Object.entries(info).map(([key, value]) => {
-            if (key == "name") {
-                deviceName = value;
-            }
-            if (key == "desc") {
-                deviceType = value;
-            }
-            if (key == "localUrl" || key == "ip") {
-                const href = key === 'localUrl'
-                    ? (/^https?:\/\//.test(String(value)) ? String(value) : `http://${value}`)
-                    : `http://${value}`;
-                return `<p class="key"><strong>${keyTranslations[key]}:</strong></p>
-                <p class="value">${value}
-                    <a href="${href}" class="btn btn-success">Go</a>
-                </p>`;
-            } else {
-                return `<p class="key"><strong>${keyTranslations[key]}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
-            }
-    }).join('');
-      
-    // Build the header content
-    const headerContent = `
-    <header>
+(() => {
+  'use strict';
+
+  // --- Constants -----------------------------------------------------------
+  const ENDPOINTS = {
+    values: '/values',
+    info: '/info',
+    modules: '/modules',
+    enable: '/enable',
+    disable: '/disable',
+    form: '/',
+    fill: '/fill'
+  };
+
+  const LABELS = {
+    localUrl: 'Local URL',
+    name: 'Name',
+    desc: 'Description',
+    version: 'Version',
+    manufacturer: 'Manufacturer',
+    id: 'ID',
+    wifi: 'WiFi',
+    ws: 'Web Sockets',
+    relay1: 'Heating',
+    relay2: 'Cooling',
+    ip: 'IP Address',
+    min: 'Min temperature',
+    max: 'Max temperature',
+    tank: 'Tank'
+  };
+
+  // --- Utils --------------------------------------------------------------
+  const qs = (sel, el = document) => el.querySelector(sel);
+  const qsa = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+
+  const fmt = {
+    c2: (n) => (typeof n === 'number' ? n.toFixed(2) : 'n/a'),
+    pct1: (n) => (typeof n === 'number' ? n.toFixed(1) : 'n/a')
+  };
+
+  async function getJSON(url) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${url} ${res.status}`);
+    return res.json();
+  }
+
+  function nowString() {
+    return new Date().toLocaleString();
+  }
+
+  function linkFor(key, value) {
+    if (key === 'localUrl') {
+      const v = String(value || '');
+      return /^https?:\/\//.test(v) ? v : `http://${v}`;
+    }
+    if (key === 'ip') return `http://${value}`;
+    return '#';
+  }
+
+  function statusBadge(values) {
+    // Prefer tank status if 'top'/'bottom' present
+    const hasTop = values.top !== undefined && values.top !== null;
+    const hasBottom = values.bottom !== undefined && values.bottom !== null;
+
+    // Heating detection: any SSRs (array or discrete). Note: relay1 is FILLING, relay2 is recirc pump.
+    const ssrArrayOn = Array.isArray(values.ssrs) && values.ssrs.some(Boolean);
+    const ssrDiscreteOn = [values.ssr1, values.ssr2, values.ssr3].some(v => v === 1 || v === true);
+    const isHeating = !!(ssrArrayOn || ssrDiscreteOn);
+
+    if (!values.enabled) {
+      return { text: 'Off', cls: 'status-off' };
+    }
+
+    if (hasTop && hasBottom) {
+      const top = Number(values.top) === 1;
+      const bottom = Number(values.bottom) === 1;
+      if (top && !bottom) return { text: 'Sensor error', cls: 'status-danger' };
+      if (!top && !bottom) return { text: 'Empty', cls: 'status-danger' };
+      if (isHeating) return { text: 'Heating', cls: 'status-warning' };
+      if (top && bottom) return { text: 'Full', cls: 'status-info' };
+      if (!top && bottom) return { text: 'Part full', cls: 'status-info' };
+    }
+
+    // Fallback to provided status or heating state, but use info color by default
+    const fallback = values.status || (isHeating ? 'Heating' : 'Idle');
+    const fbLower = String(fallback).toLowerCase();
+    if (
+      fallback === 'Error' ||
+      fallback === 'Empty' ||
+      fallback === 'Sensor error' ||
+      fbLower.includes('fill') // e.g., "FILL TANK!"
+    ) {
+      return { text: fallback, cls: 'status-danger' };
+    }
+    if (isHeating) {
+      return { text: 'Heating', cls: 'status-warning' };
+    }
+    return { text: fallback, cls: 'status-info' };
+  }
+
+  // Latest telemetry cache for UI interactions
+  let latestValues = null;
+  let valuesInFlight = false;
+  let valuesAbort = null;
+  let valuesTimeoutId = null;
+  let valuesPending = false;
+
+  // --- Rendering ----------------------------------------------------------
+  function renderHeader(values, info) {
+    const temperature = fmt.c2(values.temp1);
+    const deviceName = String(info.name || 'n/a');
+    const deviceType = String(info.desc || 'n/a');
+    const targetTemperature = fmt.c2(values.targetTemp);
+
+    return `
+      <header>
         <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
         <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}</span>˚C</h1>
-        <p class="tankContent">${values.content}</p>
+        <p class="tankContent">Tank status: <b>${values.tank ?? values.content ?? ''}</b> <span id="fillControls"></span></p>
         <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
-    </header>
+      </header>
     `;
+  }
 
-    // Build the modules content
-    const modulesContent = Object.entries(modules).map(([key, value]) => {
-        const label = keyTranslations[key] || key;
-        return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${label}</span></p>`;
+  function renderInfo(values, info) {
+    const internalTemperature = fmt.c2(values.int);
+    const internalHumidity = fmt.pct1(values.intHumidity);
+
+    const entries = Object.entries(info).map(([key, value]) => {
+      const label = LABELS[key] || key;
+      if (key === 'localUrl' || key === 'ip') {
+        const href = linkFor(key, value);
+        return `
+          <p class="key"><strong>${label}:</strong></p>
+          <p class="value">${value}
+            <a href="${href}" class="btn btn-success">Go</a>
+          </p>
+        `;
+      }
+      return `<p class="key"><strong>${label}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
     }).join('');
-  
-    // Combine all parts into the final HTML
-    var statusStyle = values.relay1 ? 'warning' : 'success';
-    var statusText = values.status || (values.relay1 ? 'Heating' : 'Idle');
-    if (!values.enabled) {
-        statusText = "Off";
-        statusStyle = "secondary";
-    }
-    
 
-    const pageContent = `
-        <div id="content">
-            ${headerContent}
-            <div class="section modules values">
-                <!--<p><span id="relay1" class="indicator ${values.relay1 ? 'enabled' : 'disabled'}"><i>${values.relay1 ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations["relay1"]}</span></p>-->
-                <div class="row justify-content-center align-items-center">
-                    <div class="col-auto">
-                        <div id="statusBox" class="form-check form-switch fs-2">
-                            <input class="form-check-input" type="checkbox"${values.enabled ? ' checked' : ''}>
-                            <label class="badge bg-${statusStyle}">${statusText}</label>
-                        </div>
-                    </div>
-                </div>
-                <br><br>
-            </div>
-            <!-- TARGET SECTION -->
-            <div class="section info">
-                <div class="text-center">
-                    <h4 id="set-header" class="btn btn-success dropdown-toggle">
-                        Set target temperature
-                        <span class="caret"></span>
-                    </h4>
-                </div>
-                <form target="#" id="set" class="card">
-                    <div class="mb-3">
-                        <div id="target-feedback" class="alert">:(</div>
-                        <div class="input-group">
-                            <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="target-feedback" />
-                            <span class="input-group-text">˚C</span>
-                            <button class="btn btn-primary" type="submit">Submit</button>
-                        </div>
-                        <div class="text-center small-info">Values between ${info.min}˚C and ${info.max}˚C</div>
-                    </div>
-                </form>
-            </div>
-            <!-- END TARGET SECTION -->
-            <!-- NAME SECTION -->
-            <div class="section info">
-                <div class="text-center">
-                    <h4 id="name-header" class="btn btn-success dropdown-toggle">
-                        Device name
-                        <span class="caret"></span>
-                    </h4>
-                </div>
-                <form target="#" id="name" class="card">
-                    <div class="mb-3">
-                        <div id="name-feedback" class="alert">:)</div>
-                        <div class="input-group">
-                            <input type="text" id="name" name="name", value="${deviceName}" class="form-control" placeholder="Device name" aria-label="Device name" aria-describedby="name-feedback" />
-                            <button class="btn btn-primary" type="submit">Submit</button>
-                        </div>
-                        <div class="text-center small-info">Device will reboot after saving</div>
-                    </div>
-                </form>
-            </div>
-            <!-- END NAME SECTION -->
-            <div class="section info">
-                <div class="text-center">
-                    <h4 id="info-header" class="btn btn-warning dropdown-toggle">
-                        System info
-                        <span class="caret"></span>
-                    </h4>
-                </div>
-                <div id="info" class="card">
-                    <p class="key"><strong>Device temperature:</strong></p><p class="value" id="internalTemperature">${internalTemperature}˚C</p>
-                    <p class="key"><strong>Device humidity:</strong></p><p class="value" id="internalHumidity">${internalHumidity}%</p>
-                    ${infoContent}
-                </div>
-            </div>
-            <div class="section modules">
-                <div class="text-center">
-                    <h4 id="modules-header" class="btn btn-warning dropdown-toggle">
-                        Available modules
-                        <span class="caret"></span>
-                    </h4>
-                </div>
-                <div id="modules" class="card">
-                    ${modulesContent}
-                </div>
-            </div>
-            <div class="footer section text-center">
-                <p>Last update: <span id="lastUpdate"></span></p>
-                <p>
-                    &copy; 
-                    <a href="https://notthatcalifornia.com">
-                        Not That California Brewing Co.
-                    </a>
-                    &
-                    Krafaj R&D Ltd
-                </p>
-            </div>
+    return `
+      <div class="section info">
+        <div class="text-center">
+          <h4 id="info-header" class="btn btn-warning dropdown-toggle">System info <span class="caret"></span></h4>
         </div>
-      `;
-      // Inject the new content into the body, replacing all current elements
-      document.body.innerHTML = pageContent;
+        <div id="info" class="card">
+          <p class="key"><strong>Device temperature:</strong></p><p class="value" id="internalTemperature">${internalTemperature}˚C</p>
+          <p class="key"><strong>Device humidity:</strong></p><p class="value" id="internalHumidity">${internalHumidity}%</p>
+          ${entries}
+        </div>
+      </div>
+    `;
+  }
 
-    $("#set-header").click(function(){
-        $("#set").toggle("fast");
-    });
-    $("#set").hide();
-    $("#name-header").click(function(){
-        $("#name").toggle("fast");
-    });
-    $("#name").hide();
-    $("#info-header").click(function(){
-        $("#info").toggle("fast");
-    });
-    $("#info").hide();
-    $("#modules-header").click(function(){
-        $("#modules").toggle("fast");
-    });
-    $("#modules").hide();
-    setLastUpdated();
+  function renderModules(modules) {
+    const list = Object.entries(modules).map(([key, value]) => {
+      const label = LABELS[key] || key;
+      return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${label}</span></p>`;
+    }).join('');
 
-    $('form#set').on('submit', function(event) {
-        event.preventDefault();
-        submitData("target");
-    });
-    $('form#name').on('submit', function(event) {
-        event.preventDefault();
-        submitData("name");
-    });
+    return `
+      <div class="section modules">
+        <div class="text-center">
+          <h4 id="modules-header" class="btn btn-warning dropdown-toggle">Available modules <span class="caret"></span></h4>
+        </div>
+        <div id="modules" class="card">${list}</div>
+      </div>
+    `;
+  }
 
-    $("#target-feedback").hide();
-    $("#name-feedback").hide();
+  function renderStatus(values) {
+    const { text, cls } = statusBadge(values);
+    return `
+      <div class="section modules values">
+        <div class="row justify-content-center align-items-center">
+          <div class="col-auto">
+            <div id="statusBox" class="form-check form-switch fs-2">
+              <input id="enabledToggle" class="form-check-input" type="checkbox" ${values.enabled ? 'checked' : ''}>
+              <span id="statusLabel" class="status-label">
+                <span class="status-dot ${cls}"></span>
+                <span class="status-text">${text}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <br><br>
+      </div>
+    `;
+  }
 
+  function renderTarget(info) {
+    const min = info.min ?? '';
+    const max = info.max ?? '';
+    return `
+      <div class="section info">
+        <div class="text-center">
+          <h4 id="set-header" class="btn btn-success dropdown-toggle">Set target temperature <span class="caret"></span></h4>
+        </div>
+        <form id="set" class="card">
+          <div class="mb-3">
+            <div id="target-feedback" class="alert" style="display:none"></div>
+            <div class="input-group">
+              <input type="text" id="target" name="target" class="form-control" placeholder="Target temperature" aria-label="Target temperature" aria-describedby="target-feedback" />
+              <span class="input-group-text">˚C</span>
+              <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
+            <div class="text-center small-info">Values between ${min}˚C and ${max}˚C</div>
+          </div>
+        </form>
+      </div>
+    `;
+  }
 
+  function renderName(info) {
+    const deviceName = String(info.name || '');
+    return `
+      <div class="section info">
+        <div class="text-center">
+          <h4 id="name-header" class="btn btn-success dropdown-toggle">Device name <span class="caret"></span></h4>
+        </div>
+        <form id="name" class="card">
+          <div class="mb-3">
+            <div id="name-feedback" class="alert" style="display:none"></div>
+            <div class="input-group">
+              <input type="text" id="nameInput" name="name" value="${deviceName}" class="form-control" placeholder="Device name" aria-label="Device name" aria-describedby="name-feedback" />
+              <button class="btn btn-primary" type="submit">Submit</button>
+            </div>
+            <div class="text-center small-info">Device will reboot after saving</div>
+          </div>
+        </form>
+      </div>
+    `;
+  }
 
-    $('#statusBox input').change(function() {
-        if ($(this).is(':checked')) {
-            // The switch is checked, call the /enable endpoint
-            $.ajax({
-                url: '/enable',
-                type: 'POST', // Assuming the endpoint expects a POST request
-                success: function(response) {
-                    // Handle success
-                    console.log('Enabled', response);
-                },
-                error: function(xhr, status, error) {
-                    // Handle error
-                    console.error('Error enabling', error);
-                }
-            });
-        } else {
-            // The switch is not checked, call the /disable endpoint
-            $.ajax({
-                url: '/disable',
-                type: 'POST', // Assuming the endpoint expects a POST request
-                success: function(response) {
-                    // Handle success
-                    console.log('Disabled', response);
-                },
-                error: function(xhr, status, error) {
-                    // Handle error
-                    console.error('Error disabling', error);
-                }
-            });
+  function renderPage(values, info, modules) {
+    const header = renderHeader(values, info);
+    const status = renderStatus(values);
+    const target = renderTarget(info);
+    const name = renderName(info);
+    const sysinfo = renderInfo(values, info);
+    const mods = renderModules(modules);
+
+    return `
+      <div id="content">
+        ${header}
+        ${status}
+        ${target}
+        ${name}
+        ${sysinfo}
+        ${mods}
+        <div class="footer section text-center">
+          <p>Last update: <span id="lastUpdate"></span></p>
+          <p>
+            &copy; <a href="https://notthatcalifornia.com">Not That California Brewing Co.</a> & Krafaj R&D Ltd
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- Behavior -----------------------------------------------------------
+  function installSectionToggles() {
+    const pairs = [
+      ['#set-header', '#set'],
+      ['#name-header', '#name'],
+      ['#info-header', '#info'],
+      ['#modules-header', '#modules']
+    ];
+    for (const [headerSel, sectionSel] of pairs) {
+      const header = qs(headerSel);
+      const section = qs(sectionSel);
+      if (!header || !section) continue;
+      section.style.display = 'none';
+      header.addEventListener('click', () => {
+        const opening = section.style.display === 'none';
+        section.style.display = opening ? '' : 'none';
+        if (opening && headerSel === '#set-header') {
+          const input = qs('input[name="target"]', section);
+          if (input && latestValues && typeof latestValues.targetTemp === 'number') {
+            input.value = fmt.c2(latestValues.targetTemp);
+          }
         }
-    });
-
-
-
-    }).catch(error => {
-      console.error('Error fetching data:', error);
-      document.body.innerHTML = `<p style="color:red;">Error loading data. Please try again later.</p>`;
-    });
-}
-
-function fetchAndUpdateValues() {
-    fetch('/values')
-        .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-        })
-        .then(data => {
-            $('#temperature').text(`${data.temp1.toFixed(2)}˚C`);
-            $('#internalTemperature').text(`${data.int.toFixed(2)}˚C`);
-            if (typeof data.intHumidity === 'number') {
-                $('#internalHumidity').text(`${data.intHumidity.toFixed(1)}%`);
-            }
-            $('#targetTemperature').text(`${data.targetTemp.toFixed(2)}˚C`);
-            $('header .tankContent').text(data.content);
-            $('#statusBox label').text(data.status);
-            if (data.status == "Error") {
-                $('#statusBox label').removeClass().addClass("badge bg-danger");
-            } else if (data.status == "Off" || data.status == "Empty") {
-                $('#statusBox label').removeClass().addClass("badge bg-secondary");
-            } else {
-                if (data.relay1 == true) {
-                    $('#statusBox label').removeClass().addClass("badge bg-warning");
-                } else {
-                    $('#statusBox label').removeClass().addClass("badge bg-success");
-                }
-            }
-            //$('#statusBox label').removeClass().addClass(newClass);
-            $('#statusBox input').attr('checked', data.enabled);
-
-
-
-            document.title = `Brewery name - ${data.temp1.toFixed(2)}˚C`;
-            setLastUpdated();
-        })
-        .catch(error => {
-        console.error('Error fetching /values:', error);
-        const errorDiv = document.getElementById('error');
-        if (errorDiv) {
-            errorDiv.textContent = 'Error loading data. Please try again later.';
-        }
-    });
-}
-
-function getDefaultFormattedDateTime() {
-    const now = new Date(Date.now());
-    const formattedDateTime = now.toLocaleString();
-    return formattedDateTime;
-}
-
-function setLastUpdated() {
-    const internalTemperatureElement = document.getElementById('lastUpdate');
-    if (internalTemperatureElement) {
-        internalTemperatureElement.textContent = getDefaultFormattedDateTime();
+      });
     }
-}
+  }
 
-function submitData(inputName) {
-    const value = $('input[name="' + inputName + '"]').val();
-    const apiEndpoint = '/';
-    $.ajax({
-        url: apiEndpoint,
-        type: 'POST',
-        data: {
-            [inputName]: value
-        },
-        success: function(data) {
-            $('input[name="' + inputName + '"]').val("");
-            fetchAndUpdateValues();
+  function updateStatusBox(values) {
+    const { text, cls } = statusBadge(values);
+    const container = qs('#statusLabel');
+    const dot = qs('#statusLabel .status-dot');
+    const textEl = qs('#statusLabel .status-text');
+    const toggle = qs('#enabledToggle');
+    if (container && dot && textEl) {
+      dot.className = `status-dot ${cls}`;
+      textEl.textContent = text;
+    }
+    if (toggle) {
+      toggle.checked = !!values.enabled;
+    }
+  }
 
-            console.log('Form submitted:', data);
-            const inputField = $('#' + inputName);
-            const feedbackContainer = $('#' + inputName + '-feedback');
-            if (data.success) {
-                feedbackContainer.removeClass('alert-danger').addClass('alert-success').text('Success: The new target temperature is ' + data.target + '˚C');
-                inputField.removeClass('is-invalid').addClass('is-valid');
-                setTimeout(function() {
-                    inputField.removeClass('is-valid');
-                    setTimeout(function() {
-                        $("#set").toggle("fast");
-                    }, 1000);
-                }, 4000);
-            } else {
-                feedbackContainer.removeClass('alert-success').addClass('alert-danger').text('An error occurred. Please try again.');
-                inputField.removeClass('is-valid').addClass('is-invalid')
-                setTimeout(function() {
-                    inputField.removeClass('is-invalid');
-                }, 5000);
-            }
-            feedbackContainer.show("fast").delay(3000).hide("fast");
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            let message = 'An error occurred while submitting the form. Please try again.';
-            if (jqXHR.responseText) {
-                try {
-                    const response = JSON.parse(jqXHR.responseText);
-                    message = response.message;
-                    
-                } catch (e) {
-                    alert(e);
-                }
-            }
-            console.error('Error submitting form:', textStatus, errorThrown);
-            const inputField = $('#' + inputName);
-            const feedbackContainer = $('#' + inputName + '-feedback');
-            feedbackContainer.removeClass('alert-success').addClass('alert-danger').text(message);
-            inputField.removeClass('is-valid').addClass('is-invalid');
-            feedbackContainer.show("fast").delay(3000).hide("fast");
-            setTimeout(function() {
-                inputField.removeClass('is-invalid');
-            }, 5000);
-        }
+  function getTankState(values) {
+    // Accept new keys top_full/bottom_safe, fallback to legacy top/bottom
+    const topRaw = (values.top_full !== undefined ? values.top_full : values.top);
+    const bottomRaw = (values.bottom_safe !== undefined ? values.bottom_safe : values.bottom);
+    const hasTop = topRaw !== undefined && topRaw !== null;
+    const hasBottom = bottomRaw !== undefined && bottomRaw !== null;
+    if (!(hasTop && hasBottom)) return 'unknown';
+    const top = Number(topRaw) === 1 || topRaw === true || topRaw === '1' || topRaw === 'true' || topRaw === 'on';
+    const bottom = Number(bottomRaw) === 1 || bottomRaw === true || bottomRaw === '1' || bottomRaw === 'true' || bottomRaw === 'on';
+    if (top && !bottom) return 'error';
+    if (!top && !bottom) return 'empty';
+    if (!top && bottom) return 'part';
+    if (top && bottom) return 'full';
+    return 'unknown';
+  }
+
+  function isFilling(values) {
+    // Only consider fill relay: relays[0] if array provided; otherwise relay1
+    if (Array.isArray(values.relays) && values.relays.length > 0) {
+      const r0 = values.relays[0];
+      return r0 === 1 || r0 === true || r0 === '1' || r0 === 'on' || r0 === 'true';
+    }
+    if (typeof values.relay1 !== 'undefined') {
+      const r1 = values.relay1;
+      return r1 === 1 || r1 === true || r1 === '1' || r1 === 'on' || r1 === 'true';
+    }
+    return false;
+  }
+
+  function renderFillControls(values) {
+    const state = getTankState(values);
+    const filling = isFilling(values);
+    if ((state === 'empty' || state === 'part') && !filling) {
+      return `<button id="fillStart" class="btn btn-sm btn-success" type="button">Fill Tank</button>`;
+    }
+    if (filling && (state === 'empty' || state === 'part')) {
+      return `<button id="fillStop" class="btn btn-sm btn-danger" type="button">Stop Fill</button>`;
+    }
+    return '';
+  }
+
+  async function postFill(start) {
+    const body = new URLSearchParams({ fill: String(!!start) });
+    await fetch(ENDPOINTS.fill, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
     });
-}
+  }
 
-// Call fetchAndUpdateValues every 5 seconds
-setInterval(fetchAndUpdateValues, 5000);
+  function updateFillControls(values) {
+    const container = qs('#fillControls');
+    if (!container) return;
+    container.innerHTML = renderFillControls(values);
+    const startBtn = qs('#fillStart');
+    const stopBtn = qs('#fillStop');
+    if (startBtn) {
+      startBtn.addEventListener('click', async () => {
+        try {
+          // Guard: never attempt to fill if tank is already full (top float true)
+          if (getTankState(latestValues || {}) === 'full') return;
+          await postFill(true);
+          await refreshValues();
+        } catch (e) { console.error('Error starting fill', e); }
+      });
+    }
+    if (stopBtn) {
+      stopBtn.addEventListener('click', async () => {
+        try {
+          await postFill(false);
+          await refreshValues();
+        } catch (e) { console.error('Error stopping fill', e); }
+      });
+    }
+  }
 
-// Call the buildPage function once the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', buildPage);
-  
+  function setLastUpdated() {
+    const el = qs('#lastUpdate');
+    if (el) el.textContent = nowString();
+  }
+
+  async function refreshValues() {
+    if (valuesInFlight) { valuesPending = true; return; }
+    valuesInFlight = true;
+    const controller = new AbortController();
+    valuesAbort = controller;
+    let timedOut = false;
+    valuesTimeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 6000);
+
+    try {
+      const res = await fetch(ENDPOINTS.values, { cache: 'no-store', signal: controller.signal });
+      if (!res.ok) throw new Error(`/values ${res.status}`);
+      const data = await res.json();
+      latestValues = data;
+
+      const tempEl = qs('#temperature');
+      const intEl = qs('#internalTemperature');
+      const rhEl = qs('#internalHumidity');
+      const tgtEl = qs('#targetTemperature');
+      const contentEl = qs('header .tankContent b');
+
+      if (tempEl) tempEl.textContent = fmt.c2(data.temp1);
+      if (intEl) intEl.textContent = `${fmt.c2(data.int)}˚C`;
+      if (rhEl && typeof data.intHumidity === 'number') rhEl.textContent = `${fmt.pct1(data.intHumidity)}%`;
+      if (tgtEl) tgtEl.textContent = `${fmt.c2(data.targetTemp)}˚C`;
+      if (contentEl) contentEl.textContent = (data.tank ?? data.content ?? '');
+
+      updateStatusBox(data);
+      updateFillControls(data);
+      document.title = `Brewery name - ${fmt.c2(data.temp1)}˚C`;
+      setLastUpdated();
+    } catch (err) {
+      const aborted = err && (err.name === 'AbortError' || err.message?.includes('AbortError'));
+      console.error('Error fetching /values:', timedOut ? 'timeout' : err);
+      const errorDiv = qs('#error');
+      if (!timedOut && errorDiv) errorDiv.textContent = 'Error loading data. Please try again later.';
+    } finally {
+      clearTimeout(valuesTimeoutId);
+      valuesTimeoutId = null;
+      valuesAbort = null;
+      valuesInFlight = false;
+      if (valuesPending || timedOut) {
+        valuesPending = false;
+        setTimeout(refreshValues, 0);
+      }
+    }
+  }
+
+  async function submitForm(inputName, value) {
+    const body = new URLSearchParams({ [inputName]: value });
+    const res = await fetch(ENDPOINTS.form, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    const data = await res.json().catch(() => ({ success: false, message: 'Invalid response' }));
+    return data;
+  }
+
+  function attachHandlers() {
+    // Enable/Disable toggle
+    const toggle = qs('#enabledToggle');
+    if (toggle) {
+      toggle.addEventListener('change', async (e) => {
+        const url = e.currentTarget.checked ? ENDPOINTS.enable : ENDPOINTS.disable;
+        try {
+          await fetch(url, { method: 'POST' });
+        } catch (err) {
+          console.error('Error toggling enabled:', err);
+        }
+      });
+    }
+
+    // Target form
+    const targetForm = qs('form#set');
+    if (targetForm) {
+      targetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = qs('input[name="target"]', targetForm);
+        const feedback = qs('#target-feedback');
+        if (!input || !feedback) return;
+        const value = input.value.trim();
+        try {
+          const resp = await submitForm('target', value);
+          input.value = '';
+          await refreshValues();
+          feedback.style.display = 'block';
+          if (resp.success) {
+            feedback.classList.remove('alert-danger');
+            feedback.classList.add('alert-success');
+            feedback.textContent = `Success: The new target temperature is ${resp.target}˚C`;
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+            setTimeout(() => {
+              input.classList.remove('is-valid');
+              const section = qs('#set');
+              if (section) section.style.display = 'none';
+            }, 1500);
+          } else {
+            feedback.classList.remove('alert-success');
+            feedback.classList.add('alert-danger');
+            feedback.textContent = resp.message || 'An error occurred. Please try again.';
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            setTimeout(() => input.classList.remove('is-invalid'), 2000);
+          }
+          setTimeout(() => { feedback.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('Error submitting target:', err);
+        }
+      });
+    }
+
+    // Name form
+    const nameForm = qs('form#name');
+    if (nameForm) {
+      nameForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = qs('input[name="name"]', nameForm);
+        const feedback = qs('#name-feedback');
+        if (!input || !feedback) return;
+        const value = input.value.trim();
+        try {
+          const resp = await submitForm('name', value);
+          input.value = '';
+          await refreshValues();
+          feedback.style.display = 'block';
+          if (resp.success) {
+            feedback.classList.remove('alert-danger');
+            feedback.classList.add('alert-success');
+            feedback.textContent = `Success: Name saved.`;
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+            setTimeout(() => input.classList.remove('is-valid'), 1500);
+          } else {
+            feedback.classList.remove('alert-success');
+            feedback.classList.add('alert-danger');
+            feedback.textContent = resp.message || 'An error occurred. Please try again.';
+            input.classList.remove('is-valid');
+            input.classList.add('is-invalid');
+            setTimeout(() => input.classList.remove('is-invalid'), 2000);
+          }
+          setTimeout(() => { feedback.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('Error submitting name:', err);
+        }
+      });
+    }
+  }
+
+  // --- Init ---------------------------------------------------------------
+  async function init() {
+    try {
+      const [values, info, modules] = await Promise.all([
+        getJSON(ENDPOINTS.values),
+        getJSON(ENDPOINTS.info),
+        getJSON(ENDPOINTS.modules)
+      ]);
+
+      latestValues = values;
+      document.title = `Brewery HLT - ${fmt.c2(values.temp1)}˚C`;
+      document.body.innerHTML = renderPage(values, info, modules);
+
+      installSectionToggles();
+      attachHandlers();
+      setLastUpdated();
+      updateFillControls(values);
+
+      // Start background refresh
+      setInterval(refreshValues, 5000);
+    } catch (err) {
+      console.error('Error loading data:', err);
+      document.body.innerHTML = '<p style="color:red;">Error loading data. Please try again later.</p>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();

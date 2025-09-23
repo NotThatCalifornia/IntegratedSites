@@ -32,6 +32,24 @@ h4 {
 div.values {
     text-align: center;
 }
+/* Status label (non-button look) */
+.status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    padding: 4px 0;
+}
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.status-info { background-color: #0dcaf0; }
+.status-warning { background-color: #ffc107; }
+.status-danger { background-color: #dc3545; }
+.status-off { background-color: #6c757d; }
 div.section {
 
 }
