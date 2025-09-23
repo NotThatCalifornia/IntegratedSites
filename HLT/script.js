@@ -25,6 +25,9 @@ function buildPage() {
         // Extract temperature and update the title
         const temperature = values.temp1.toFixed(2);
         const internalTemperature = values.int.toFixed(2);
+        const internalHumidity = (values.intHumidity !== undefined && values.intHumidity !== null)
+            ? values.intHumidity.toFixed(1)
+            : 'n/a';
         const targetTemperature = values.targetTemp.toFixed(2);
         document.title = `Brewery HLT - ${temperature}˚C`;
     
@@ -39,9 +42,12 @@ function buildPage() {
                 deviceType = value;
             }
             if (key == "localUrl" || key == "ip") {
+                const href = key === 'localUrl'
+                    ? (/^https?:\/\//.test(String(value)) ? String(value) : `http://${value}`)
+                    : `http://${value}`;
                 return `<p class="key"><strong>${keyTranslations[key]}:</strong></p>
                 <p class="value">${value}
-                    <a href="http://${value}" class="btn btn-success">Go</a>
+                    <a href="${href}" class="btn btn-success">Go</a>
                 </p>`;
             } else {
                 return `<p class="key"><strong>${keyTranslations[key]}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
@@ -52,7 +58,7 @@ function buildPage() {
     const headerContent = `
     <header>
         <img src="https://notthatcalifornia.github.io/IntegratedSites/img/logo.png" alt="Not That California Brewing Company" />
-        <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}<span>˚C</h1>
+        <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}</span>˚C</h1>
         <p class="tankContent">${values.content}</p>
         <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
     </header>
@@ -60,12 +66,13 @@ function buildPage() {
 
     // Build the modules content
     const modulesContent = Object.entries(modules).map(([key, value]) => {
-        return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${keyTranslations[key]}</span></p>`;
+        const label = keyTranslations[key] || key;
+        return `<p><span class="indicator ${value ? 'enabled' : 'disabled'}"><i>${value ? 'Enabled' : 'Disabled'}</i></span><span class="name">${label}</span></p>`;
     }).join('');
   
     // Combine all parts into the final HTML
     var statusStyle = values.relay1 ? 'warning' : 'success';
-    var statusText = values.relay1 ? 'Heating' : 'Idle';
+    var statusText = values.status || (values.relay1 ? 'Heating' : 'Idle');
     if (!values.enabled) {
         statusText = "Off";
         statusStyle = "secondary";
@@ -137,8 +144,9 @@ function buildPage() {
                 </div>
                 <div id="info" class="card">
                     <p class="key"><strong>Device temperature:</strong></p><p class="value" id="internalTemperature">${internalTemperature}˚C</p>
+                    <p class="key"><strong>Device humidity:</strong></p><p class="value" id="internalHumidity">${internalHumidity}%</p>
                     ${infoContent}
-                </div
+                </div>
             </div>
             <div class="section modules">
                 <div class="text-center">
@@ -250,6 +258,9 @@ function fetchAndUpdateValues() {
         .then(data => {
             $('#temperature').text(`${data.temp1.toFixed(2)}˚C`);
             $('#internalTemperature').text(`${data.int.toFixed(2)}˚C`);
+            if (typeof data.intHumidity === 'number') {
+                $('#internalHumidity').text(`${data.intHumidity.toFixed(1)}%`);
+            }
             $('#targetTemperature').text(`${data.targetTemp.toFixed(2)}˚C`);
             $('header .tankContent').text(data.content);
             $('#statusBox label').text(data.status);
@@ -269,7 +280,7 @@ function fetchAndUpdateValues() {
 
 
 
-            document.title = `Brewery name - ${data.temperature}˚C`;
+            document.title = `Brewery name - ${data.temp1.toFixed(2)}˚C`;
             setLastUpdated();
         })
         .catch(error => {
@@ -309,7 +320,7 @@ function submitData(inputName) {
 
             console.log('Form submitted:', data);
             const inputField = $('#' + inputName);
-            const feedbackContainer = $('#' + inputName + 'feedback');
+            const feedbackContainer = $('#' + inputName + '-feedback');
             if (data.success) {
                 feedbackContainer.removeClass('alert-danger').addClass('alert-success').text('Success: The new target temperature is ' + data.target + '˚C');
                 inputField.removeClass('is-invalid').addClass('is-valid');
@@ -341,7 +352,7 @@ function submitData(inputName) {
             }
             console.error('Error submitting form:', textStatus, errorThrown);
             const inputField = $('#' + inputName);
-            const feedbackContainer = $('#' + inputName + 'feedback');
+            const feedbackContainer = $('#' + inputName + '-feedback');
             feedbackContainer.removeClass('alert-success').addClass('alert-danger').text(message);
             inputField.removeClass('is-valid').addClass('is-invalid');
             feedbackContainer.show("fast").delay(3000).hide("fast");
