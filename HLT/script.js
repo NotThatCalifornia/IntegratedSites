@@ -122,7 +122,7 @@
 
     return `
       <header>
-        <img class="brand-logo" src="/img/bevvy.png" alt="Bevvy" />
+        <img class="brand-logo" src="https://hardware.notthatcalifornia.com/img/bevvy.png" alt="Bevvy" />
         <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}</span>˚C</h1>
         <p class="tankContent">Tank status: <b>${values.tank ?? values.content ?? ''}</b> <span id="fillControls"></span></p>
         <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
