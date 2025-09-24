@@ -118,3 +118,54 @@ div.modules span.name {
 .footer a {
     color: darkgray;
 }
+
+/* Files list */
+.file-list .file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f1f1;
+}
+.file-list .file-meta {
+    color: #6c757d;
+    font-size: 0.9em;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+/* Overlay for file content */
+.overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    display: none;
+}
+.overlay-panel {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 900px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+.overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+}
+.overlay-content {
+    margin: 0;
+    padding: 14px;
+    max-height: 70vh;
+    overflow: auto;
+    white-space: pre-wrap;
+}

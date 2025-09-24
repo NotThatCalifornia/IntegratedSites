@@ -53,8 +53,24 @@
       const kib = b / 1024;
       const mib = b / (1024 * 1024);
       return `${mib.toFixed(2)} MB (${kib.toFixed(2)} kB)`;
+    },
+    sizeStr: (bytes) => {
+      const b = Number(bytes);
+      if (!isFinite(b)) return 'n/a';
+      if (b < 1024) return `${b} B`;
+      if (b < 1024*1024) return `${(b/1024).toFixed(1)} kB`;
+      return `${(b/(1024*1024)).toFixed(2)} MB`;
     }
   };
+
+  // --- Files helpers -------------------------------------------------------
+  function buildFileUrl(name) {
+    return `/files/` + String(name).split('/').map(encodeURIComponent).join('/');
+  }
+
+  function canDeleteFile(entry) {
+    return entry.storage === 'flash' && (entry.name === 'HEATING.txt' || entry.name === 'log.txt');
+  }
 
   async function getJSON(url) {
     const res = await fetch(url, { cache: 'no-store' });
@@ -192,6 +208,33 @@
     `;
   }
 
+  function renderFilesSection() {
+    return `
+      <div class="section files">
+        <div class="text-center">
+          <h4 id="files-header" class="btn btn-warning dropdown-toggle">Files <span class="caret"></span></h4>
+        </div>
+        <div id="files" class="card">
+          <div id="filesList" class="file-list small-info">Open to load files…</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderOverlay() {
+    return `
+      <div id="overlayBackdrop" class="overlay-backdrop" style="display:none">
+        <div class="overlay-panel">
+          <div class="overlay-header">
+            <span id="overlayTitle">File</span>
+            <button id="overlayClose" class="btn btn-sm btn-secondary" type="button">Close</button>
+          </div>
+          <pre id="overlayContent" class="overlay-content">Loading…</pre>
+        </div>
+      </div>
+    `;
+  }
+
   function renderStatus(values) {
     const { text, cls } = statusBadge(values);
     return `
@@ -263,6 +306,7 @@
     const name = renderName(info);
     const sysinfo = renderInfo(values, info);
     const mods = renderModules(modules);
+    const files = renderFilesSection();
 
     return `
       <div id="content">
@@ -272,6 +316,7 @@
         ${name}
         ${sysinfo}
         ${mods}
+        ${files}
         <div class="footer section text-center">
           <p>Last update: <span id="lastUpdate"></span></p>
           <p>
@@ -279,6 +324,7 @@
           </p>
         </div>
       </div>
+      ${renderOverlay()}
     `;
   }
 
@@ -288,7 +334,8 @@
       ['#set-header', '#set'],
       ['#name-header', '#name'],
       ['#info-header', '#info'],
-      ['#modules-header', '#modules']
+      ['#modules-header', '#modules'],
+      ['#files-header', '#files']
     ];
     for (const [headerSel, sectionSel] of pairs) {
       const header = qs(headerSel);
@@ -303,6 +350,9 @@
           if (input && latestValues && typeof latestValues.targetTemp === 'number') {
             input.value = fmt.c2(latestValues.targetTemp);
           }
+        }
+        if (opening && headerSel === '#files-header') {
+          loadFiles();
         }
       });
     }
@@ -396,6 +446,85 @@
           await refreshValues();
         } catch (e) { console.error('Error stopping fill', e); }
       });
+    }
+  }
+
+  async function loadFiles() {
+    const list = qs('#filesList');
+    if (!list) return;
+    list.textContent = 'Loading…';
+    try {
+      const res = await fetch('/files', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`/files ${res.status}`);
+      const entries = await res.json();
+      if (!Array.isArray(entries) || entries.length === 0) {
+        list.textContent = 'No files available.';
+        return;
+      }
+      list.innerHTML = entries.map(e => {
+        const del = canDeleteFile(e) ? `<button class="btn btn-sm btn-outline-danger file-del" data-name="${e.name}">Delete</button>` : '';
+        return `
+          <div class="file-row">
+            <button class="btn btn-sm btn-outline-primary file-open" data-name="${e.name}">${e.name}</button>
+            <span class="file-meta">${e.storage} • ${fmt.sizeStr(e.size)}</span>
+            ${del}
+          </div>
+        `;
+      }).join('');
+
+      qsa('.file-open', list).forEach(btn => btn.addEventListener('click', async (ev) => {
+        const name = ev.currentTarget.getAttribute('data-name');
+        await openOverlay(name);
+      }));
+      qsa('.file-del', list).forEach(btn => btn.addEventListener('click', async (ev) => {
+        const name = ev.currentTarget.getAttribute('data-name');
+        await deleteFile(name);
+      }));
+    } catch (err) {
+      list.textContent = 'Failed to load files.';
+      console.error('Error loading files:', err);
+    }
+  }
+
+  async function openOverlay(name) {
+    const back = qs('#overlayBackdrop');
+    const title = qs('#overlayTitle');
+    const content = qs('#overlayContent');
+    const close = qs('#overlayClose');
+    if (!back || !title || !content || !close) return;
+    title.textContent = name;
+    content.textContent = 'Loading…';
+    back.style.display = 'block';
+    const url = buildFileUrl(name);
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`${url} ${res.status}`);
+      const text = await res.text();
+      content.textContent = text;
+    } catch (err) {
+      content.textContent = 'Failed to load file.';
+      console.error('Error loading file:', err);
+    }
+    close.onclick = () => closeOverlay();
+    back.onclick = (e) => { if (e.target === back) closeOverlay(); };
+  }
+
+  function closeOverlay() {
+    const back = qs('#overlayBackdrop');
+    if (back) back.style.display = 'none';
+  }
+
+  async function deleteFile(name) {
+    if (!confirm(`Delete ${name}?`)) return;
+    const url = buildFileUrl(name);
+    try {
+      const res = await fetch(url, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`${url} ${res.status}`);
+      await res.json();
+      await loadFiles();
+    } catch (err) {
+      alert('Delete failed.');
+      console.error('Error deleting file:', err);
     }
   }
 
