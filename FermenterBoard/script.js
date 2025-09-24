@@ -23,7 +23,7 @@ function buildPage() {
       const temperature = values.temp1.toFixed(2);
       const internalTemperature = values.int.toFixed(2);
       const targetTemperature = values.targetTemp.toFixed(2);
-      document.title = `Brewery name - ${temperature}˚C`;
+      document.title = `Bevvy - ${temperature}˚C`;
   
       
       var deviceName = "n/a";
@@ -132,11 +132,9 @@ function buildPage() {
                 <p>Last update: <span id="lastUpdate"></span></p>
                 <p>
                     &copy; 
-                    <a href="https://notthatcalifornia.com">
-                        Not That California Brewing Co.
+                    <a href="https://bevvytech.com">
+                        Bevvy Tech Ltd.
                     </a>
-                    &
-                    Krafaj R&D Ltd
                 </p>
             </div>
         </div>

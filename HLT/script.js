@@ -34,7 +34,10 @@
     ip: 'IP Address',
     min: 'Min temperature',
     max: 'Max temperature',
-    tank: 'Tank'
+    tank: 'Tank',
+    flashFree: 'Flash free',
+    flashUsed: 'Flash used',
+    flashTotal: 'Flash total'
   };
 
   // --- Utils --------------------------------------------------------------
@@ -43,7 +46,14 @@
 
   const fmt = {
     c2: (n) => (typeof n === 'number' ? n.toFixed(2) : 'n/a'),
-    pct1: (n) => (typeof n === 'number' ? n.toFixed(1) : 'n/a')
+    pct1: (n) => (typeof n === 'number' ? n.toFixed(1) : 'n/a'),
+    kib_mib: (bytes) => {
+      const b = Number(bytes);
+      if (!isFinite(b)) return 'n/a';
+      const kib = b / 1024;
+      const mib = b / (1024 * 1024);
+      return `${mib.toFixed(2)} MB (${kib.toFixed(2)} kB)`;
+    }
   };
 
   async function getJSON(url) {
@@ -123,7 +133,8 @@
     return `
       <header>
         <img class="brand-logo" src="https://hardware.notthatcalifornia.com/img/bevvy.png" alt="Bevvy" />
-        <h1><b>${deviceName.toUpperCase()} - ${deviceType}</b><br><span id="temperature">${temperature}</span>˚C</h1>
+        <h1><b>${deviceName.toUpperCase()}</b><br><span id="temperature">${temperature}</span>˚C</h1>
+        <p>${deviceType}</p>
         <p class="tankContent">Tank status: <b>${values.tank ?? values.content ?? ''}</b> <span id="fillControls"></span></p>
         <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
       </header>
@@ -144,6 +155,9 @@
             <a href="${href}" class="btn btn-success">Go</a>
           </p>
         `;
+      }
+      if (key === 'flashFree' || key === 'flashUsed' || key === 'flashTotal') {
+        return `<p class="key"><strong>${label}:</strong></p><p class="value" id="key-${key}">${fmt.kib_mib(value)}</p>`;
       }
       return `<p class="key"><strong>${label}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
     }).join('');
@@ -261,7 +275,7 @@
         <div class="footer section text-center">
           <p>Last update: <span id="lastUpdate"></span></p>
           <p>
-            &copy; <a href="https://notthatcalifornia.com">Not That California Brewing Co.</a> & Krafaj R&D Ltd
+            &copy; <a href="https://bevvytech.com">Bevvy Tech Ltd.</a>
           </p>
         </div>
       </div>
@@ -421,7 +435,7 @@
 
       updateStatusBox(data);
       updateFillControls(data);
-      document.title = `Brewery name - ${fmt.c2(data.temp1)}˚C`;
+      document.title = `Bevvy - ${fmt.c2(data.temp1)}˚C`;
       setLastUpdated();
     } catch (err) {
       const aborted = err && (err.name === 'AbortError' || err.message?.includes('AbortError'));
