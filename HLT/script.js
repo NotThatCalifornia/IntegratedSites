@@ -462,21 +462,24 @@
         return;
       }
       list.innerHTML = entries.map(e => {
-        const del = canDeleteFile(e) ? `<button class="btn btn-sm btn-outline-danger file-del" data-name="${e.name}">Delete</button>` : '';
+        const href = buildFileUrl(e.name);
+        const del = canDeleteFile(e) ? `<button type="button" class="btn btn-sm btn-outline-danger file-del" data-name="${e.name}">Delete</button>` : '';
         return `
           <div class="file-row">
-            <button class="btn btn-sm btn-outline-primary file-open" data-name="${e.name}">${e.name}</button>
+            <a href="${href}" class="btn btn-sm btn-outline-primary file-open" data-name="${e.name}">${e.name}</a>
             <span class="file-meta">${e.storage} • ${fmt.sizeStr(e.size)}</span>
             ${del}
           </div>
         `;
       }).join('');
 
-      qsa('.file-open', list).forEach(btn => btn.addEventListener('click', async (ev) => {
+      qsa('.file-open', list).forEach(a => a.addEventListener('click', async (ev) => {
+        ev.preventDefault();
         const name = ev.currentTarget.getAttribute('data-name');
         await openOverlay(name);
       }));
       qsa('.file-del', list).forEach(btn => btn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
         const name = ev.currentTarget.getAttribute('data-name');
         await deleteFile(name);
       }));
