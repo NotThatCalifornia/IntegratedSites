@@ -17,7 +17,8 @@
     enable: '/enable',
     disable: '/disable',
     form: '/',
-    fill: '/fill'
+    fill: '/fill',
+    ota: '/ota'
   };
 
   const LABELS = {
@@ -134,6 +135,7 @@
 
   // Latest telemetry cache for UI interactions
   let latestValues = null;
+  let latestInfo = null;
   let valuesInFlight = false;
   let valuesAbort = null;
   let valuesTimeoutId = null;
@@ -299,11 +301,39 @@
     `;
   }
 
+  function renderOTA(info) {
+    const board = String(info.board || '').trim();
+    return `
+      <div class="section info">
+        <div class="text-center">
+          <h4 id="ota-header" class="btn btn-warning dropdown-toggle">Firmware update <span class="caret"></span></h4>
+        </div>
+        <form id="ota" class="card">
+          <div class="mb-3">
+            <div class="small-info">Board version: <b id="otaBoard">${board || 'unknown'}</b></div>
+            <div class="mb-2">
+              <input type="file" id="otaFile" accept=".bin,application/octet-stream" class="form-control" />
+            </div>
+            <div class="mb-2">
+              <input type="text" id="otaVersion" class="form-control" placeholder="Optional version note (X-OTA-Version)" />
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary" type="submit">Upload and update</button>
+            </div>
+            <div id="ota-feedback" class="alert" style="display:none"></div>
+            <div class="small-info">Uploads to /ota and reboots device on success.</div>
+          </div>
+        </form>
+      </div>
+    `;
+  }
+
   function renderPage(values, info, modules) {
     const header = renderHeader(values, info);
     const status = renderStatus(values);
     const target = renderTarget(info);
     const name = renderName(info);
+    const ota = renderOTA(info);
     const sysinfo = renderInfo(values, info);
     const mods = renderModules(modules);
     const files = renderFilesSection();
@@ -314,6 +344,7 @@
         ${status}
         ${target}
         ${name}
+        ${ota}
         ${sysinfo}
         ${mods}
         ${files}
@@ -333,6 +364,7 @@
     const pairs = [
       ['#set-header', '#set'],
       ['#name-header', '#name'],
+      ['#ota-header', '#ota'],
       ['#info-header', '#info'],
       ['#modules-header', '#modules'],
       ['#files-header', '#files']
@@ -686,6 +718,44 @@
         }
       });
     }
+
+    // OTA form
+    const otaForm = qs('form#ota');
+    if (otaForm) {
+      otaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const feedback = qs('#ota-feedback');
+        const fileInput = qs('#otaFile');
+        const verInput = qs('#otaVersion');
+        const file = fileInput && fileInput.files && fileInput.files[0];
+        const boardCode = (latestInfo && latestInfo.board) || (qs('#otaBoard')?.textContent || '').trim();
+        if (!file) {
+          if (feedback) { feedback.style.display='block'; feedback.className='alert alert-danger'; feedback.textContent='Please choose a firmware .bin file.'; }
+          return;
+        }
+        if (!boardCode) {
+          if (feedback) { feedback.style.display='block'; feedback.className='alert alert-danger'; feedback.textContent='Cannot determine board version from /info.'; }
+          return;
+        }
+        try {
+          if (feedback) { feedback.style.display='block'; feedback.className='alert alert-info'; feedback.textContent='Uploading… Device will reboot on success.'; }
+          const headers = new Headers();
+          headers.set('Content-Type', 'application/octet-stream');
+          headers.set('X-Board-Ver', String(boardCode));
+          const note = verInput?.value?.trim();
+          if (note) headers.set('X-OTA-Version', note);
+          const res = await fetch(ENDPOINTS.ota, { method: 'POST', headers, body: file });
+          if (!res.ok) {
+            const txt = await res.text().catch(()=>'');
+            throw new Error(txt || `OTA failed: ${res.status}`);
+          }
+          if (feedback) { feedback.className='alert alert-success'; feedback.textContent='Upload OK. Rebooting…'; }
+        } catch (err) {
+          console.error('OTA error:', err);
+          if (feedback) { feedback.style.display='block'; feedback.className='alert alert-danger'; feedback.textContent= String(err.message || err); }
+        }
+      });
+    }
   }
 
   // --- Init ---------------------------------------------------------------
@@ -698,6 +768,7 @@
       ]);
 
       latestValues = values;
+      latestInfo = info;
       document.title = `Brewery HLT - ${fmt.c2(values.temp1)}˚C`;
       document.body.innerHTML = renderPage(values, info, modules);
 
