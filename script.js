@@ -35,6 +35,8 @@
     ip: 'IP Address',
     min: 'Min temperature',
     max: 'Max temperature',
+    board: 'PCB Board version',
+    product: 'Product',
     tank: 'Tank',
     flashFree: 'Flash free',
     flashUsed: 'Flash used',
@@ -141,20 +143,78 @@
   let valuesTimeoutId = null;
   let valuesPending = false;
 
+  // --- Product-based visibility -----------------------------------------
+  const TANK_PRODUCTS = new Set(['HLT', 'KTL', 'CLT', 'DST', 'FBT']);
+
+  const PRODUCT_NAMES = {
+    HLT: 'Hot Liquor Tank',
+    KTL: 'Kettle',
+    FBT: 'Fermenter/Brite',
+    DST: 'Distillery',
+    CO2: 'CO2 Capture',
+    CHL: 'Chiller',
+    CLT: 'Cold Liquor Tank',
+    UBK: 'Underback',
+    TST: 'Test Unit',
+    TMP: 'Temperature Monitor',
+    UNK: 'Unknown'
+  };
+
+  function getProductCode(info) {
+    const i = info || {};
+    let raw = i.product || i.productCode || i.product_code || i.productType || i.type || i.code;
+    raw = (raw == null ? '' : String(raw)).trim();
+    let code = raw.toUpperCase();
+    if (!code || code.length > 4 || /[^A-Z0-9]/.test(code)) {
+      const desc = String(i.desc || '').toLowerCase();
+      if (desc.includes('ferment')) code = 'FBT';
+      else if (desc.includes('kettle')) code = 'KTL';
+      else if (desc.includes('hlt')) code = 'HLT';
+      else if (desc.includes('distill')) code = 'DST';
+      else if (desc.includes('clt')) code = 'CLT';
+      else if (desc.includes('chill')) code = 'CHL';
+      else if (desc.includes('underback') || desc.includes('ubk')) code = 'UBK';
+      else if (desc.includes('co2')) code = 'CO2';
+      else if (desc.includes('test')) code = 'TST';
+      else if (desc.includes('temp')) code = 'TMP';
+      else code = 'UNK';
+    }
+    return code;
+  }
+
+  function showTankFeatures(info) {
+    try { return TANK_PRODUCTS.has(getProductCode(info)); } catch { return false; }
+  }
+
+  function getProductName(info) {
+    const code = getProductCode(info);
+    return PRODUCT_NAMES[code] || PRODUCT_NAMES.UNK;
+  }
+
+  function formatVersion(v) {
+    const s0 = String(v ?? '').trim();
+    if (!s0) return 'n/a';
+    const digits = s0.replace(/[^0-9]/g, '');
+    if (!digits) return 'n/a';
+    const s = (digits.length >= 3 ? digits.slice(-3) : digits.padStart(3, '0'));
+    return `${s[0]}.${s[1]}.${s[2]}`;
+  }
+
   // --- Rendering ----------------------------------------------------------
   function renderHeader(values, info) {
     const temperature = fmt.c2(values.temp1);
     const deviceName = String(info.name || 'n/a');
-    const deviceType = String(info.desc || 'n/a');
+    const deviceType = getProductName(info);
     const targetTemperature = fmt.c2(values.targetTemp);
+    const tankUI = showTankFeatures(info);
 
     return `
       <header>
         <img class="brand-logo" src="https://hardware.notthatcalifornia.com/img/bevvy.png" alt="Bevvy" />
         <h1><b>${deviceName.toUpperCase()}</b><br><span id="temperature">${temperature}</span>˚C</h1>
         <p>${deviceType}</p>
-        <p class="tankContent">Tank status: <b>${values.tank ?? values.content ?? ''}</b> <span id="fillControls"></span></p>
-        <h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>
+        ${tankUI ? `<p class="tankContent">Tank status: <b>${values.tank ?? values.content ?? ''}</b> <span id="fillControls"></span></p>` : ''}
+        ${tankUI ? `<h3>(Target temperature: <span id="targetTemperature">${targetTemperature}˚C</span>)</h3>` : ''}
       </header>
     `;
   }
@@ -162,6 +222,9 @@
   function renderInfo(values, info) {
     const internalTemperature = fmt.c2(values.int);
     const internalHumidity = fmt.pct1(values.intHumidity);
+
+    const PRODUCT_KEYS = new Set(['product', 'productCode', 'product_code', 'productType', 'type', 'code', 'desc']);
+    let productHandled = false;
 
     const entries = Object.entries(info).map(([key, value]) => {
       const label = LABELS[key] || key;
@@ -174,11 +237,19 @@
           </p>
         `;
       }
+      if (PRODUCT_KEYS.has(key)) {
+        if (productHandled) return '';
+        productHandled = true;
+        return `<p class="key"><strong>Product:</strong></p><p class="value" id="key-product">${getProductName(info)}</p>`;
+      }
+      if (key === 'version') {
+        return `<p class="key"><strong>Version:</strong></p><p class="value" id="key-version">${formatVersion(value)}</p>`;
+      }
       if (key === 'flashFree' || key === 'flashUsed' || key === 'flashTotal') {
         return `<p class="key"><strong>${label}:</strong></p><p class="value" id="key-${key}">${fmt.kib_mib(value)}</p>`;
       }
       return `<p class="key"><strong>${label}:</strong></p><p class="value" id="key-${key}">${value}</p>`;
-    }).join('');
+    }).filter(Boolean).join('');
 
     return `
       <div class="section info">
@@ -330,8 +401,9 @@
 
   function renderPage(values, info, modules) {
     const header = renderHeader(values, info);
-    const status = renderStatus(values);
-    const target = renderTarget(info);
+    const canShowTank = showTankFeatures(info);
+    const status = canShowTank ? renderStatus(values) : '';
+    const target = canShowTank ? renderTarget(info) : '';
     const name = renderName(info);
     const ota = renderOTA(info);
     const sysinfo = renderInfo(values, info);
