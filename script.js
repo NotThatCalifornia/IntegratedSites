@@ -18,7 +18,8 @@
     disable: '/disable',
     form: '/',
     fill: '/fill',
-    ota: '/ota'
+    ota: '/ota',
+    handshake: '/provision/handshake'
   };
 
   const LABELS = {
@@ -40,7 +41,11 @@
     tank: 'Tank',
     flashFree: 'Flash free',
     flashUsed: 'Flash used',
-    flashTotal: 'Flash total'
+    flashTotal: 'Flash total',
+    nextCode: 'Auth code',
+    next_code: 'Auth code',
+    nextPasscode: 'Auth code',
+    next_passcode: 'Auth code'
   };
 
   // --- Utils --------------------------------------------------------------
@@ -65,6 +70,19 @@
       return `${(b/(1024*1024)).toFixed(2)} MB`;
     }
   };
+
+  const HTML_ESCAPE_RE = /[&<>"']/g;
+  const HTML_ESCAPE_MAP = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch] || ch);
+  }
 
   // --- Files helpers -------------------------------------------------------
   function buildFileUrl(name) {
@@ -138,10 +156,12 @@
   // Latest telemetry cache for UI interactions
   let latestValues = null;
   let latestInfo = null;
+  let latestCloud = null;
   let valuesInFlight = false;
   let valuesAbort = null;
   let valuesTimeoutId = null;
   let valuesPending = false;
+  let cloudRequestInFlight = false;
 
   // --- Product-based visibility -----------------------------------------
   const TANK_PRODUCTS = new Set(['HLT', 'KTL', 'CLT', 'DST', 'FBT']);
@@ -219,14 +239,70 @@
     `;
   }
 
+  function summarizeCloudData(data) {
+    if (!data || typeof data !== 'object') {
+      return { text: 'value unknown', title: '', idDisplay: null, nextCode: null };
+    }
+    const status = data.status ?? data.state ?? (data.ok === true ? 'ok' : '');
+    const deviceId = data.deviceId ?? data.deviceID ?? data.device_id ?? data.id;
+    const mac = data.mac ?? data.macAddress ?? data.mac_address;
+    const nextCode = data.nextCode ?? data.next_code ?? data.nextPasscode ?? data.next_passcode;
+    const message = data.message ?? data.note ?? '';
+    const parts = [];
+    if (status) parts.push(String(status));
+    if (deviceId) parts.push(`deviceId=${deviceId}`);
+    if (mac) parts.push(`mac=${mac}`);
+    if (nextCode) parts.push(`nextCode=${nextCode}`);
+    if (!parts.length && data.ok) parts.push('ok');
+    if (!parts.length && message) parts.push(String(message));
+    if (!parts.length) parts.push('value unknown');
+    let title = '';
+    try {
+      title = JSON.stringify(data, null, 2);
+    } catch {
+      title = '';
+    }
+    const macStr = mac != null ? String(mac).trim() : '';
+    const deviceIdStr = deviceId != null ? String(deviceId).trim() : '';
+    const nextCodeStr = nextCode != null ? String(nextCode).trim() : '';
+    const idDisplay = macStr || deviceIdStr || null;
+    return {
+      text: parts.join(' · '),
+      title,
+      idDisplay,
+      nextCode: nextCodeStr || null
+    };
+  }
+
+  function renderCloudRow() {
+    const summary = summarizeCloudData(latestCloud);
+    const displayHtml = summary.idDisplay && summary.nextCode
+      ? `Device ID: ${escapeHtml(summary.idDisplay)}<br>Auth code: ${escapeHtml(summary.nextCode)}`
+      : escapeHtml(summary.text);
+    const buttonHtml = summary.nextCode
+      ? ''
+      : '<button id="cloudRegister" class="btn btn-success" type="button">Register</button>';
+    return `
+          <p class="key"><strong>Cloud:</strong></p>
+          <p class="value" id="cloudStatus">
+            <span id="cloudStatusText">${displayHtml}</span>
+            ${buttonHtml}
+          </p>
+        `;
+  }
+
   function renderInfo(values, info) {
     const internalTemperature = fmt.c2(values.int);
     const internalHumidity = fmt.pct1(values.intHumidity);
 
     const PRODUCT_KEYS = new Set(['product', 'productCode', 'product_code', 'productType', 'type', 'code', 'desc']);
+    const HIDDEN_INFO_KEYS = new Set(['nextCode']);
     let productHandled = false;
 
+    const cloudRow = renderCloudRow();
+
     const entries = Object.entries(info).map(([key, value]) => {
+      if (HIDDEN_INFO_KEYS.has(key)) return '';
       const label = LABELS[key] || key;
       if (key === 'localUrl' || key === 'ip') {
         const href = linkFor(key, value);
@@ -259,6 +335,7 @@
         <div id="info" class="card">
           <p class="key"><strong>Device temperature:</strong></p><p class="value" id="internalTemperature">${internalTemperature}˚C</p>
           <p class="key"><strong>Device humidity:</strong></p><p class="value" id="internalHumidity">${internalHumidity}%</p>
+          ${cloudRow}
           ${entries}
         </div>
       </div>
@@ -690,6 +767,106 @@
     }
   }
 
+  function updateCloudStatusDisplay(data, options = {}) {
+    const container = qs('#cloudStatus');
+    const textEl = qs('#cloudStatusText');
+    if (!textEl) return;
+    if (options.loading) {
+      textEl.textContent = 'Registering…';
+      if (container) container.removeAttribute('title');
+      return;
+    }
+    if (options.error) {
+      const msg = String(options.error || 'failed');
+      const text = msg.length > 120 ? `${msg.slice(0, 117)}…` : msg;
+      textEl.textContent = `error: ${text}`;
+      if (container) container.setAttribute('title', msg);
+      return;
+    }
+    const summary = summarizeCloudData(data);
+    if (summary.idDisplay && summary.nextCode) {
+      textEl.innerHTML = `Device ID: ${escapeHtml(summary.idDisplay)}<br>Auth code: ${escapeHtml(summary.nextCode)}`;
+    } else {
+      textEl.innerHTML = escapeHtml(summary.text);
+    }
+    const btn = qs('#cloudRegister');
+    if (btn) {
+      if (summary.nextCode) {
+        btn.style.display = 'none';
+        btn.disabled = false;
+        btn.textContent = 'Register';
+      } else {
+        btn.style.display = '';
+      }
+    }
+    if (container) {
+      if (summary.title) container.setAttribute('title', summary.title);
+      else container.removeAttribute('title');
+    }
+  }
+
+  function extractCloudFields(source) {
+    if (!source || typeof source !== 'object') return null;
+    const fields = {};
+    const keys = [
+      'status', 'state', 'ok', 'message', 'note',
+      'deviceId', 'deviceID', 'device_id', 'id',
+      'mac', 'macAddress', 'mac_address',
+      'nextCode', 'next_code', 'nextPasscode', 'next_passcode'
+    ];
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(source, key)) {
+        fields[key] = source[key];
+      }
+    }
+    return Object.keys(fields).length ? fields : null;
+  }
+
+  function mergeCloudData(current, update) {
+    if (!update) return current;
+    return { ...(current || {}), ...update };
+  }
+
+  async function runCloudHandshake() {
+    if (cloudRequestInFlight) return;
+    cloudRequestInFlight = true;
+    const btn = qs('#cloudRegister');
+    const originalText = btn ? btn.textContent : 'Register';
+    try {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Registering…';
+      }
+      updateCloudStatusDisplay(null, { loading: true });
+      const res = await fetch(ENDPOINTS.handshake, { method: 'POST', cache: 'no-store' });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+      if (!res.ok) {
+        const msg = data && (data.error || data.message) ? String(data.error || data.message) : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      if (!data || typeof data !== 'object') {
+        data = { ok: true };
+      }
+      latestCloud = mergeCloudData(latestCloud, data);
+      updateCloudStatusDisplay(latestCloud);
+    } catch (err) {
+      const message = String(err && err.message ? err.message : err || 'failed');
+      updateCloudStatusDisplay(null, { error: message });
+      console.error('Error calling /provision/handshake:', err);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText || 'Register';
+      }
+      cloudRequestInFlight = false;
+    }
+  }
+
   async function submitForm(inputName, value) {
     const body = new URLSearchParams({ [inputName]: value });
     const res = await fetch(ENDPOINTS.form, {
@@ -828,6 +1005,13 @@
         }
       });
     }
+
+    const cloudButton = qs('#cloudRegister');
+    if (cloudButton) {
+      cloudButton.addEventListener('click', () => {
+        runCloudHandshake();
+      });
+    }
   }
 
   // --- Init ---------------------------------------------------------------
@@ -841,11 +1025,13 @@
 
       latestValues = values;
       latestInfo = info;
+      latestCloud = mergeCloudData(latestCloud, extractCloudFields(info));
       document.title = `Brewery HLT - ${fmt.c2(values.temp1)}˚C`;
       document.body.innerHTML = renderPage(values, info, modules);
 
       installSectionToggles();
       attachHandlers();
+      updateCloudStatusDisplay(latestCloud);
       setLastUpdated();
       updateFillControls(values);
 

@@ -77,7 +77,8 @@ div.info p {
 div.info p.key {
     
 }
-p.value a.btn {
+p.value a.btn,
+p.value button.btn {
     float: right;
     margin-top: -3px;
 }
