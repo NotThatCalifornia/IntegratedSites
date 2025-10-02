@@ -19,7 +19,8 @@
     form: '/',
     fill: '/fill',
     ota: '/ota',
-    handshake: '/provision/handshake'
+    handshake: '/provision/handshake',
+    cloudRegister: '/cloud-register'
   };
 
   const LABELS = {
@@ -162,6 +163,7 @@
   let valuesTimeoutId = null;
   let valuesPending = false;
   let cloudRequestInFlight = false;
+  let cloudRegisterInFlight = false;
 
   // --- Product-based visibility -----------------------------------------
   const TANK_PRODUCTS = new Set(['HLT', 'KTL', 'CLT', 'DST', 'FBT']);
@@ -281,12 +283,21 @@
       : escapeHtml(summary.text);
     const buttonHtml = summary.nextCode
       ? ''
-      : '<button id="cloudRegister" class="btn btn-success" type="button">Register</button>';
+      : '<button id="cloudRegister" class="btn btn-success cloud-register-btn" type="button">Register</button>';
+    const finishHtml = `
+            <div id="cloudFinish" class="cloud-finish" style="display:none;">
+              <div class="input-group input-group-sm">
+                <input id="cloudAccessToken" type="text" class="form-control" placeholder="Access token" autocomplete="off" />
+                <button id="cloudFinishBtn" class="btn btn-primary" type="button">Finish</button>
+              </div>
+              <div id="cloudFinishFeedback" class="small-info" style="display:none; margin-top:6px;"></div>
+            </div>`;
     return `
           <p class="key"><strong>Cloud:</strong></p>
           <p class="value" id="cloudStatus">
             <span id="cloudStatusText">${displayHtml}</span>
             ${buttonHtml}
+            ${finishHtml}
           </p>
         `;
   }
@@ -799,9 +810,98 @@
         btn.style.display = '';
       }
     }
+    const finishContainer = qs('#cloudFinish');
+    const finishButton = qs('#cloudFinishBtn');
+    const finishInput = qs('#cloudAccessToken');
+    const finishFeedback = qs('#cloudFinishFeedback');
+    if (finishContainer) {
+      if (summary.nextCode) {
+        finishContainer.style.display = '';
+      } else {
+        finishContainer.style.display = 'none';
+        if (finishInput) finishInput.value = '';
+        if (finishFeedback) {
+          finishFeedback.style.display = 'none';
+          finishFeedback.textContent = '';
+          finishFeedback.classList.remove('text-danger', 'text-success');
+        }
+      }
+    }
+    if (finishButton) {
+      finishButton.disabled = !!cloudRegisterInFlight;
+      finishButton.textContent = cloudRegisterInFlight ? 'Finishing…' : 'Finish';
+    }
     if (container) {
       if (summary.title) container.setAttribute('title', summary.title);
       else container.removeAttribute('title');
+    }
+  }
+
+  async function runCloudRegister() {
+    if (cloudRegisterInFlight) return;
+    const input = qs('#cloudAccessToken');
+    const button = qs('#cloudFinishBtn');
+    const feedback = qs('#cloudFinishFeedback');
+    if (!input || !button) return;
+    const token = input.value.trim();
+    if (!token) {
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-success');
+        feedback.classList.add('text-danger');
+        feedback.textContent = 'Please enter an access token.';
+      }
+      return;
+    }
+    try {
+      cloudRegisterInFlight = true;
+      button.disabled = true;
+      button.textContent = 'Finishing…';
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-danger', 'text-success');
+        feedback.textContent = 'Submitting…';
+      }
+      const res = await fetch(ENDPOINTS.cloudRegister, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: token })
+      });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+      if (!res.ok) {
+        const msg = data && (data.error || data.message) ? String(data.error || data.message) : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      if (data && typeof data === 'object') {
+        latestCloud = mergeCloudData(latestCloud, data);
+        updateCloudStatusDisplay(latestCloud);
+      }
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-danger');
+        feedback.classList.add('text-success');
+        feedback.textContent = 'Access token saved. Cloud setup is complete!';
+      }
+      input.value = '';
+    } catch (err) {
+      console.error('Error calling /cloud-register:', err);
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-success');
+        feedback.classList.add('text-danger');
+        feedback.textContent = String(err && err.message ? err.message : err || 'Failed to submit token.');
+      }
+    } finally {
+      cloudRegisterInFlight = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Finish';
+      }
     }
   }
 
@@ -1010,6 +1110,22 @@
     if (cloudButton) {
       cloudButton.addEventListener('click', () => {
         runCloudHandshake();
+      });
+    }
+
+    const finishButton = qs('#cloudFinishBtn');
+    if (finishButton) {
+      finishButton.addEventListener('click', () => {
+        runCloudRegister();
+      });
+    }
+    const finishInput = qs('#cloudAccessToken');
+    if (finishInput) {
+      finishInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          runCloudRegister();
+        }
       });
     }
   }
