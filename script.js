@@ -21,7 +21,7 @@
     ota: '/ota',
     handshake: '/provision/handshake',
     cloudRegister: '/cloud-register',
-    resetAccessToken: '/reset-access-token'
+    resetCloud: '/reset-cloud'
   };
 
   const LABELS = {
@@ -175,7 +175,7 @@
   let valuesPending = false;
   let cloudRequestInFlight = false;
   let cloudRegisterInFlight = false;
-  let resetAccessInFlight = false;
+  let resetCloudInFlight = false;
 
   // --- Product-based visibility -----------------------------------------
   const TANK_PRODUCTS = new Set(['HLT', 'KTL', 'CLT', 'DST', 'FBT']);
@@ -861,8 +861,8 @@
     }
     const resetButton = qs('#cloudResetBtn');
     if (resetButton) {
-      resetButton.disabled = !!resetAccessInFlight;
-      resetButton.textContent = resetAccessInFlight ? 'Resetting…' : 'Reset';
+      resetButton.disabled = !!resetCloudInFlight;
+      resetButton.textContent = resetCloudInFlight ? 'Resetting…' : 'Reset';
     }
     if (container) {
       if (summary.title) container.setAttribute('title', summary.title);
@@ -938,13 +938,13 @@
     }
   }
 
-  async function runResetAccessToken() {
-    if (resetAccessInFlight) return;
+  async function runResetCloud() {
+    if (resetCloudInFlight) return;
     const button = qs('#cloudResetBtn');
     const feedback = qs('#cloudFinishFeedback');
     const input = qs('#cloudAccessToken');
     try {
-      resetAccessInFlight = true;
+      resetCloudInFlight = true;
       if (button) {
         button.disabled = true;
         button.textContent = 'Resetting…';
@@ -952,9 +952,9 @@
       if (feedback) {
         feedback.style.display = 'block';
         feedback.classList.remove('text-success', 'text-danger');
-        feedback.textContent = 'Resetting access token…';
+        feedback.textContent = 'Resetting cloud…';
       }
-      const res = await fetch(ENDPOINTS.resetAccessToken, {
+      const res = await fetch(ENDPOINTS.resetCloud, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reset: true }),
@@ -974,7 +974,7 @@
         feedback.style.display = 'block';
         feedback.classList.remove('text-danger');
         feedback.classList.add('text-success');
-        feedback.textContent = 'Access token reset. Reloading…';
+        feedback.textContent = 'Cloud reset complete. Reloading…';
       }
       if (input) input.value = '';
       const updated = { ...(latestCloud || {}) };
@@ -983,22 +983,22 @@
       delete updated.nextPasscode;
       delete updated.next_passcode;
       if (!updated.message) {
-        updated.message = 'Access token reset. Run Register to fetch a fresh code if needed.';
+        updated.message = 'Cloud reset. Run Register to fetch a fresh code if needed.';
       }
       latestCloud = Object.keys(updated).length ? updated : null;
       updateCloudStatusDisplay(latestCloud);
       await new Promise((resolve) => setTimeout(resolve, 800));
       window.location.reload();
     } catch (err) {
-      console.error('Error calling /reset-access-token:', err);
+      console.error('Error calling /reset-cloud:', err);
       if (feedback) {
         feedback.style.display = 'block';
         feedback.classList.remove('text-success');
         feedback.classList.add('text-danger');
-        feedback.textContent = String(err && err.message ? err.message : err || 'Failed to reset access token.');
+        feedback.textContent = String(err && err.message ? err.message : err || 'Failed to reset cloud.');
       }
     } finally {
-      resetAccessInFlight = false;
+      resetCloudInFlight = false;
       if (button) {
         button.disabled = false;
         button.textContent = 'Reset';
@@ -1234,7 +1234,7 @@
     const resetButton = qs('#cloudResetBtn');
     if (resetButton) {
       resetButton.addEventListener('click', () => {
-        runResetAccessToken();
+        runResetCloud();
       });
     }
   }
