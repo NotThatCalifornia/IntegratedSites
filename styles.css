@@ -77,10 +77,15 @@ div.info p {
 div.info p.key {
     
 }
-p.value a.btn,
-p.value button.btn.cloud-register-btn {
+p.value a.btn {
     float: right;
     margin-top: -3px;
+}
+
+p.value button.btn.cloud-register-btn {
+    float: none;
+    margin-top: 0;
+    margin-right: 8px;
 }
 div.modules p {
     position: relative;
@@ -146,6 +151,29 @@ div.modules span.name {
 
 .cloud-finish .small-info {
     margin-top: 6px !important;
+}
+
+.cloud-finish .cloud-finish-group {
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+.cloud-finish .cloud-finish-group input.form-control {
+    min-width: 0;
+}
+
+.cloud-finish .cloud-finish-group button {
+    white-space: nowrap;
+}
+
+.cloud-finish .cloud-finish-group > :not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.cloud-finish .cloud-finish-group > :not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 /* Overlay for file content */

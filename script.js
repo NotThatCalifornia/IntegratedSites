@@ -20,7 +20,8 @@
     fill: '/fill',
     ota: '/ota',
     handshake: '/provision/handshake',
-    cloudRegister: '/cloud-register'
+    cloudRegister: '/cloud-register',
+    resetAccessToken: '/reset-access-token'
   };
 
   const LABELS = {
@@ -83,6 +84,16 @@
 
   function escapeHtml(value) {
     return String(value ?? '').replace(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch] || ch);
+  }
+
+  function cleanCloudText(raw) {
+    if (!raw) return '';
+    const parts = String(raw)
+      .split('·')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .filter((part) => !/^deviceId=/i.test(part));
+    return parts.join(' · ');
   }
 
   // --- Files helpers -------------------------------------------------------
@@ -164,6 +175,7 @@
   let valuesPending = false;
   let cloudRequestInFlight = false;
   let cloudRegisterInFlight = false;
+  let resetAccessInFlight = false;
 
   // --- Product-based visibility -----------------------------------------
   const TANK_PRODUCTS = new Set(['HLT', 'KTL', 'CLT', 'DST', 'FBT']);
@@ -252,6 +264,7 @@
     const message = data.message ?? data.note ?? '';
     const parts = [];
     if (status) parts.push(String(status));
+    // Preserve IDs for tooltip/JSON but avoid showing raw deviceId string in default text
     if (deviceId) parts.push(`deviceId=${deviceId}`);
     if (mac) parts.push(`mac=${mac}`);
     if (nextCode) parts.push(`nextCode=${nextCode}`);
@@ -286,17 +299,21 @@
       : '<button id="cloudRegister" class="btn btn-success cloud-register-btn" type="button">Register</button>';
     const finishHtml = `
             <div id="cloudFinish" class="cloud-finish" style="display:none;">
-              <div class="input-group input-group-sm">
+              <div class="input-group input-group-sm cloud-finish-group">
                 <input id="cloudAccessToken" type="text" class="form-control" placeholder="Access token" autocomplete="off" />
                 <button id="cloudFinishBtn" class="btn btn-primary" type="button">Finish</button>
+                <button id="cloudResetBtn" class="btn btn-outline-danger" type="button">Reset</button>
               </div>
               <div id="cloudFinishFeedback" class="small-info" style="display:none; margin-top:6px;"></div>
             </div>`;
+    const hasAuth = summary.idDisplay && summary.nextCode;
+    const fallback = summary.text && summary.text !== 'value unknown' ? summary.text : '';
+    const baseText = hasAuth ? displayHtml : (cleanCloudText(fallback) || 'Not registered with cloud');
     return `
           <p class="key"><strong>Cloud:</strong></p>
           <p class="value" id="cloudStatus">
-            <span id="cloudStatusText">${displayHtml}</span>
             ${buttonHtml}
+            <span id="cloudStatusText" data-cloud-id="${summary.idDisplay ? escapeHtml(summary.idDisplay) : ''}">${baseText}</span>
             ${finishHtml}
           </p>
         `;
@@ -783,11 +800,13 @@
     const textEl = qs('#cloudStatusText');
     if (!textEl) return;
     if (options.loading) {
+      textEl.style.display = '';
       textEl.textContent = 'Registering…';
       if (container) container.removeAttribute('title');
       return;
     }
     if (options.error) {
+      textEl.style.display = '';
       const msg = String(options.error || 'failed');
       const text = msg.length > 120 ? `${msg.slice(0, 117)}…` : msg;
       textEl.textContent = `error: ${text}`;
@@ -796,9 +815,18 @@
     }
     const summary = summarizeCloudData(data);
     if (summary.idDisplay && summary.nextCode) {
+      textEl.style.display = '';
       textEl.innerHTML = `Device ID: ${escapeHtml(summary.idDisplay)}<br>Auth code: ${escapeHtml(summary.nextCode)}`;
+      textEl.dataset.cloudId = summary.idDisplay ? summary.idDisplay : '';
+    } else if (summary.text && summary.text !== 'value unknown') {
+      const base = cleanCloudText(summary.text);
+      textEl.style.display = '';
+      textEl.textContent = base || 'Not registered with cloud';
+      textEl.dataset.cloudId = summary.idDisplay ? summary.idDisplay : '';
     } else {
-      textEl.innerHTML = escapeHtml(summary.text);
+      textEl.style.display = '';
+      textEl.textContent = 'Not registered with cloud';
+      textEl.dataset.cloudId = summary.idDisplay ? summary.idDisplay : '';
     }
     const btn = qs('#cloudRegister');
     if (btn) {
@@ -830,6 +858,11 @@
     if (finishButton) {
       finishButton.disabled = !!cloudRegisterInFlight;
       finishButton.textContent = cloudRegisterInFlight ? 'Finishing…' : 'Finish';
+    }
+    const resetButton = qs('#cloudResetBtn');
+    if (resetButton) {
+      resetButton.disabled = !!resetAccessInFlight;
+      resetButton.textContent = resetAccessInFlight ? 'Resetting…' : 'Reset';
     }
     if (container) {
       if (summary.title) container.setAttribute('title', summary.title);
@@ -902,6 +935,75 @@
         button.disabled = false;
         button.textContent = 'Finish';
       }
+    }
+  }
+
+  async function runResetAccessToken() {
+    if (resetAccessInFlight) return;
+    const button = qs('#cloudResetBtn');
+    const feedback = qs('#cloudFinishFeedback');
+    const input = qs('#cloudAccessToken');
+    try {
+      resetAccessInFlight = true;
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Resetting…';
+      }
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-success', 'text-danger');
+        feedback.textContent = 'Resetting access token…';
+      }
+      const res = await fetch(ENDPOINTS.resetAccessToken, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reset: true }),
+        cache: 'no-store'
+      });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+      if (!res.ok) {
+        const msg = data && (data.error || data.message) ? String(data.error || data.message) : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-danger');
+        feedback.classList.add('text-success');
+        feedback.textContent = 'Access token reset. Reloading…';
+      }
+      if (input) input.value = '';
+      const updated = { ...(latestCloud || {}) };
+      delete updated.nextCode;
+      delete updated.next_code;
+      delete updated.nextPasscode;
+      delete updated.next_passcode;
+      if (!updated.message) {
+        updated.message = 'Access token reset. Run Register to fetch a fresh code if needed.';
+      }
+      latestCloud = Object.keys(updated).length ? updated : null;
+      updateCloudStatusDisplay(latestCloud);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      window.location.reload();
+    } catch (err) {
+      console.error('Error calling /reset-access-token:', err);
+      if (feedback) {
+        feedback.style.display = 'block';
+        feedback.classList.remove('text-success');
+        feedback.classList.add('text-danger');
+        feedback.textContent = String(err && err.message ? err.message : err || 'Failed to reset access token.');
+      }
+    } finally {
+      resetAccessInFlight = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Reset';
+      }
+      updateCloudStatusDisplay(latestCloud);
     }
   }
 
@@ -1126,6 +1228,13 @@
           e.preventDefault();
           runCloudRegister();
         }
+      });
+    }
+
+    const resetButton = qs('#cloudResetBtn');
+    if (resetButton) {
+      resetButton.addEventListener('click', () => {
+        runResetAccessToken();
       });
     }
   }
